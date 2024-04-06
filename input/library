@@ -1,0 +1,153 @@
+#!/usr/bin/bash
+
+function prepare_all {
+  download_kernel_rpms
+
+  pushd /cache/kernel-rpms || return 1
+  if [ "$KRNVENDOR" = "fedora" ] || [ "$KRNVENDOR" = "kwizart" ]; then
+    pkgfile=${KERNEL_DEVEL_PKG##*/}
+    dnf install -y "${pkgfile}"
+  elif [ "$KRNVENDOR" = "almalinux" ]; then
+    pkgfile1=${KERNEL_DEVEL_PKG##*/}
+    pkgfile2=${KERNEL_ABI_PKG##*/}
+    dnf install -y "./${pkgfile1}" "./${pkgfile2}"
+  fi
+  popd || return 1
+
+  mkdir -p /output/kernel
+  mkdir -p /output/userspace
+}
+
+function build_zfs_rpms {
+  pushd /cache || return 1
+  if [ ! -f "zfs-${ZFSVER}.tar.gz" ]; then
+    echo "Downloading ZFS source tarball..."
+    curl --no-progress-meter -LO "${ZFS_TARBALL_URL}"
+  fi
+  rm -rf "${BUILD_DIR}/zfs-${ZFSVER}"
+  tar xzvf "zfs-${ZFSVER}.tar.gz"
+
+  pushd "/cache/zfs-${ZFSVER}/rpm/generic" || return 1
+  if [ "${ENABLE_SPEC_PATCH}" -eq 1 ]; then
+    echo "Patching ZFS kmod RPM spec..."
+    patch < /input/patches/zfs-kmod-spec.patch
+  fi
+  popd || return 1
+
+  pushd "/cache/zfs-${ZFSVER}" || return 1
+
+  if [ "${ENABLE_META_PATCH}" -eq 1 ]; then
+    echo "Patching META..."
+    sed -i 's/CDDL/GPL v2/g' META
+  fi
+
+  
+  if [ "$KRNVENDOR" = "fedora" ] || [ "$KRNVENDOR" = "kwizart" ]; then
+    echo "Configuring ZFS kmod build..."
+    ./configure
+  elif [ "$KRNVENDOR" = "almalinux" ]; then
+    echo "Configuring ZFS kABI-tracking kmod build..."
+    # https://openzfs.github.io/openzfs-docs/Developer%20Resources/Custom%20Packages.html
+    # kol kas kABI yra atjungtas ir mes kaip ir Fedora atveju buildinam paketus konkrečioms kernel versijoms
+    ./configure
+  fi
+
+  echo "Building ZFS RPM packages..."
+  make -j1 rpm-kmod rpm-utils
+
+  popd || return 1
+  popd || return 1
+}
+
+function move_zfs_rpms {
+  pushd "/cache/zfs-${ZFSVER}" || return 1
+
+  echo "Copying ZFS kmod packages to output dir..."
+  # i kernel paketu output direktorija perkeliam kmod paketus  
+  for f in ./*.rpm; do 
+    # filtruojam kmod-*.rpm
+    if [[ "$f" =~ kmod-.*  ]]; then 
+      cp -nv "$f" /output/kernel/
+    fi
+  done
+
+  echo "Copying ZFS userspace packages to output dir..."
+  # i userspace paketu output direktorija perkeliam likusius paketus
+  for f in ./*.rpm; do 
+    # filtruojam NE kmod-*.rpm
+    if [[ ! "$f" =~ kmod-.*\.rpm  ]]; then 
+      cp -nv "$f" /output/userspace/
+    fi
+  done
+
+  popd || return 1
+}
+
+function download_kernel_rpms {
+  mkdir -p /cache/kernel-rpms
+  pushd /cache/kernel-rpms || return 1
+
+  echo "Downloading missing kernel packages..."
+  # parsisiunciam RPM paketus, jei nera
+  for i in "${KERNEL_PACKAGES[@]}"
+  do
+    pkgfile=${i##*/}
+    if [ ! -f "$pkgfile" ]; then
+      echo "Downloading: $pkgfile"
+      curl --no-progress-meter -LO "$i"
+    fi
+  done
+
+  popd || return 1
+}
+
+function patch_kernel_meta_rpm {
+  pushd /cache/kernel-rpms || return 1
+  
+  pkgfile=${KERNEL_META_PKG##*/}
+  echo "Patching ${pkgfile} package requirements..."
+  # pridedam kmod-zfs requirement i kernel.rpm SPEC
+  # rezultatas yra modifikuotas RPM failas /cache/kernel-rpms/x86_64 direktorijoje
+  if [ "$KRNVENDOR" = "fedora" ] || [ "$KRNVENDOR" = "kwizart" ]; then
+    rpmrebuild --directory=/cache/kernel-rpms \
+      --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRNVER}-${KRNRELEASE} >= ${ZFSVER}')" \
+      -p "/cache/kernel-rpms/${pkgfile}"
+  elif [ "$KRNVENDOR" = "almalinux" ]; then    
+    rpmrebuild --directory=/cache/kernel-rpms \
+      --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRNVER}.${KRNRELEASE} >= ${ZFSVER}')" \
+      -p "/cache/kernel-rpms/${pkgfile}"
+  fi
+
+  popd || return 1
+}
+
+
+function move_kernel_rpms {
+  echo "Copying kernel packages to output dir..."
+  # padedam visus kernel paketus i savo repozitorija. kernel.rpm visada uzrasom, o likusius - praleidziam, jei jau yra.
+  for i in "${KERNEL_PACKAGES[@]}"
+  do
+    pkgfile=${i##*/}
+    cp -nv "/cache/kernel-rpms/$pkgfile" /output/kernel/
+  done
+  pkgfile=${KERNEL_META_PKG##*/}
+  cp -fv "/cache/kernel-rpms/${KRNARCH}/${pkgfile}" /output/kernel/
+}
+
+function cleanup_zfs {
+  echo "Cleaning ZFS build dir..."
+  rm -rf "/cache/zfs-${ZFSVER}"
+}
+
+function cleanup_kernel {
+  echo "Cleaning rebuilt kernel packages dir..."
+  rm -rf "/cache/kernel-rpms/${KRNARCH}"
+}
+
+function update_repo {
+  # regenerate repo metadata
+  rm -f /repo/repodata/*
+  createrepo /repo
+}
+
+

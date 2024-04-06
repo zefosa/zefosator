@@ -1,0 +1,111 @@
+#!/usr/bin/bash
+
+ZFSVER=2.2.3
+# fedora, kwizart, almalinux
+KRNVENDOR=fedora
+# 1 = keisti licencija i GPL v2 pries buildinant
+ENABLE_META_PATCH=1
+KRNARCH=x86_64
+
+if [ "$KRNVENDOR" = "kwizart" ]; then
+  RELEASEVER=38
+  REPO_NAME=38
+  # docker/podman image name
+  BASE_IMAGE_NAME=fedora:${RELEASEVER}
+  KRNBRANCH=6.1
+  KRNREL=73
+  KRNFC=200.fc${RELEASEVER}
+  # reikalingas kwizart kernelio URL gabalas
+  KWIZART_BUILD_ID=06905852
+  ZFSRELEASE=1.fc${RELEASEVER}.${KRNARCH}
+  KRNVER=${KRNBRANCH}.${KRNREL}
+  KRNRELEASE=${KRNFC}.${KRNARCH}
+  # 1 = ismesti is RPM SPEC BuildRequires, kai kernel-devel paketas vadinasi kitaip
+  ENABLE_SPEC_PATCH=1
+elif [ "$KRNVENDOR" = "fedora" ]; then
+  RELEASEVER=39
+  REPO_NAME=39
+  # docker/podman image name
+  BASE_IMAGE_NAME=fedora:${RELEASEVER}
+  KRNBRANCH=6.7
+  KRNREL=10
+  KRNFC=200.fc${RELEASEVER}
+  ZFSRELEASE=1.fc${RELEASEVER}.${KRNARCH}
+  KRNVER=${KRNBRANCH}.${KRNREL}
+  KRNRELEASE=${KRNFC}.${KRNARCH}
+  # 1 = ismesti is RPM SPEC BuildRequires, kai kernel-devel paketas vadinasi kitaip
+  ENABLE_SPEC_PATCH=0
+elif [ "$KRNVENDOR" = "almalinux" ]; then
+  RELEASEVER=9.3
+  REPO_NAME=el9
+  # docker/podman image name
+  BASE_IMAGE_NAME=almalinux/9-base
+  # https://repo.almalinux.org/almalinux/9.3/AppStream/x86_64/os/Packages/
+  # kernel-5.14.0-362.13.1.el9_3.x86_64
+  KRNBRANCH=5.14.0
+  KRNREL=362.18.1
+  KRN_EL=el9_3
+  #          1.el9_3.x86_64
+  ZFSRELEASE=1.${KRN_EL}.${KRNARCH}
+  #      5.14.0-362.13.1
+  KRNVER=${KRNBRANCH}-${KRNREL}
+  #          el9_3.x86_64
+  KRNRELEASE=${KRN_EL}.${KRNARCH}
+  # 1 = ismesti is RPM SPEC BuildRequires, kai kernel-devel paketas vadinasi kitaip
+  ENABLE_SPEC_PATCH=0
+fi
+
+ZFS_TARBALL_URL=https://github.com/openzfs/zfs/releases/download/zfs-${ZFSVER}/zfs-${ZFSVER}.tar.gz
+
+if [ "$KRNVENDOR" = "kwizart" ]; then
+# Kwizart LTS
+KERNEL_PKG_BASE_NAME=kernel-longterm
+KERNEL_URL_DIR=https://download.copr.fedorainfracloud.org/results/kwizart/${KERNEL_PKG_BASE_NAME}-${KRNBRANCH}/fedora-${RELEASEVER}-${KRNARCH}/${KWIZART_BUILD_ID}-${KERNEL_PKG_BASE_NAME}
+KERNEL_META_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-${KRNVER}-${KRNRELEASE}.rpm
+KERNEL_DEVEL_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-${KRNVER}-${KRNRELEASE}.rpm
+KERNEL_PACKAGES=( \
+  "${KERNEL_META_PKG}" \
+  "${KERNEL_DEVEL_PKG}" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-core-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-matched-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-internal-${KRNVER}-${KRNRELEASE}.rpm" \
+)
+elif [ "$KRNVENDOR" = "fedora" ]; then
+# Fedora
+KERNEL_PKG_BASE_NAME=kernel
+KERNEL_URL_DIR=https://kojipkgs.fedoraproject.org/packages/kernel/${KRNVER}/${KRNFC}/${KRNARCH}
+KERNEL_META_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-${KRNVER}-${KRNRELEASE}.rpm
+KERNEL_DEVEL_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-${KRNVER}-${KRNRELEASE}.rpm
+KERNEL_PACKAGES=( \
+  "${KERNEL_META_PKG}" \
+  "${KERNEL_DEVEL_PKG}" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-core-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-matched-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-core-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRNVER}-${KRNRELEASE}.rpm" \
+  "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-internal-${KRNVER}-${KRNRELEASE}.rpm" \
+)
+elif [ "$KRNVENDOR" = "almalinux" ]; then
+# AlmaLinux
+KERNEL_PKG_BASE_NAME=kernel
+#               https://repo.almalinux.org/almalinux/9.3/BaseOS/x86_64/os/Packages/kernel-5.14.0-362.13.1.el9_3.x86_64.rpm
+KERNEL_META_PKG=https://repo.almalinux.org/almalinux/${RELEASEVER}/BaseOS/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-${KRNVER}.${KRNRELEASE}.rpm
+#              https://repo.almalinux.org/almalinux/9.3/BaseOS/x86_64/os/Packages/kernel-abi-stablelists-5.14.0-362.13.1.el9_3.noarch.rpm
+KERNEL_ABI_PKG=https://repo.almalinux.org/almalinux/${RELEASEVER}/BaseOS/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-abi-stablelists-${KRNVER}.${KRN_EL}.noarch.rpm
+#                https://repo.almalinux.org/almalinux/9.3/AppStream/x86_64/os/Packages/kernel-devel-5.14.0-362.13.1.el9_3.x86_64.rpm
+KERNEL_DEVEL_PKG=https://repo.almalinux.org/almalinux/${RELEASEVER}/AppStream/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-devel-${KRNVER}.${KRNRELEASE}.rpm
+KERNEL_PACKAGES=( \
+  "${KERNEL_META_PKG}" \
+  "${KERNEL_ABI_PKG}" \
+  "${KERNEL_DEVEL_PKG}" \
+  "https://repo.almalinux.org/almalinux/${RELEASEVER}/AppStream/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-devel-matched-${KRNVER}.${KRNRELEASE}.rpm" \
+  "https://repo.almalinux.org/almalinux/${RELEASEVER}/AppStream/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-headers-${KRNVER}.${KRNRELEASE}.rpm" \
+  "https://repo.almalinux.org/almalinux/${RELEASEVER}/BaseOS/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-core-${KRNVER}.${KRNRELEASE}.rpm" \
+  "https://repo.almalinux.org/almalinux/${RELEASEVER}/BaseOS/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-${KRNVER}.${KRNRELEASE}.rpm" \
+  "https://repo.almalinux.org/almalinux/${RELEASEVER}/BaseOS/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-core-${KRNVER}.${KRNRELEASE}.rpm" \
+  "https://repo.almalinux.org/almalinux/${RELEASEVER}/BaseOS/${KRNARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRNVER}.${KRNRELEASE}.rpm" \
+)
+fi
