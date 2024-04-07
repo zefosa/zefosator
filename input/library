@@ -20,33 +20,30 @@ function prepare_all {
 
 function build_zfs_rpms {
   pushd /cache || return 1
-  if [ ! -d "zfs-${ZFSVER}" ]; then
+  if [ ! -d "zfs-${ZFS_GIT_TAG}" ]; then
     echo "Checking out ZFS sources..."
-    curl --no-progress-meter -LO "${ZFS_TARBALL_URL}"
-    git clone --depth 1 --branch zfs-${ZFSVER} ${ZFS_GITHUB_REPO} zfs-${ZFSVER}
+    git clone --depth 1 --branch zfs-${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} zfs-${ZFS_GIT_TAG}
   fi
 
-  pushd "/cache/zfs-${ZFSVER}/rpm/generic" || return 1
+  pushd "/cache/zfs-${ZFS_GIT_TAG}/rpm/generic" || return 1
   if [ "${ENABLE_SPEC_PATCH}" -eq 1 ]; then
     echo "Patching ZFS kmod RPM spec..."
     patch < /input/patches/zfs-kmod-spec.patch
   fi
   popd || return 1
 
-  pushd "/cache/zfs-${ZFSVER}" || return 1
+  pushd "/cache/zfs-${ZFS_GIT_TAG}" || return 1
 
   if [ "${ENABLE_LICENSE_PATCH}" -eq 1 ]; then
     echo "Patching license..."
     sed -i "s/License:.*/License:       GPL v2/" META    
   fi
 
-  if [ "${ENABLE_VERSION_PATCH}" -eq 1 ]; then
-    echo "Patching META version and release..."
-    sed -i "s/Version:.*/Version:       ${ZFS_SET_VERSION}/" META
-    sed -i "s/Release:.*/Release:       ${ZFS_SET_RELEASE}/" META
-  fi
+  echo "Patching META version and release..."
+  sed -i "s/Version:.*/Version:       ${ZFS_PKG_VERSION}/" META
+  sed -i "s/Release:.*/Release:       ${ZFS_PKG_RELEASE}/" META
 
-  if [ ! -f "zfs-${ZFSVER}/Makefile" ]; then
+  if [ ! -f "zfs-${ZFS_GIT_TAG}/Makefile" ]; then
     echo "Launching autogen..."
     sh autogen.sh
   fi
@@ -69,7 +66,7 @@ function build_zfs_rpms {
 }
 
 function move_zfs_rpms {
-  pushd "/cache/zfs-${ZFSVER}" || return 1
+  pushd "/cache/zfs-${ZFS_GIT_TAG}" || return 1
 
   echo "Copying ZFS kmod packages to output dir..."
   # i kernel paketu output direktorija perkeliam kmod paketus  
@@ -119,11 +116,11 @@ function patch_kernel_meta_rpm {
   # rezultatas yra modifikuotas RPM failas /cache/kernel-rpms/x86_64 direktorijoje
   if [ "$KRNVENDOR" = "fedora" ] || [ "$KRNVENDOR" = "kwizart" ]; then
     rpmrebuild --directory=/cache/kernel-rpms \
-      --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRNVER}-${KRNRELEASE} >= ${ZFSVER}')" \
+      --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRNVER}-${KRNRELEASE} >= ${ZFS_PKG_VERSION}')" \
       -p "/cache/kernel-rpms/${pkgfile}"
   elif [ "$KRNVENDOR" = "almalinux" ]; then    
     rpmrebuild --directory=/cache/kernel-rpms \
-      --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRNVER}.${KRNRELEASE} >= ${ZFSVER}')" \
+      --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRNVER}.${KRNRELEASE} >= ${ZFS_PKG_VERSION}')" \
       -p "/cache/kernel-rpms/${pkgfile}"
   fi
 
@@ -145,7 +142,7 @@ function move_kernel_rpms {
 
 function cleanup_zfs {
   echo "Cleaning ZFS build dir..."
-  rm -rf "/cache/zfs-${ZFSVER}"
+  rm -rf "/cache/zfs-${ZFS_GIT_TAG}"
 }
 
 function cleanup_kernel {

@@ -1,17 +1,16 @@
 #!/usr/bin/bash
 
-# git tag or branch name
-ZFSVER=2.2.4-staging
+# git tag or branch name to checkout
+ZFS_GIT_TAG=2.2.4-staging
+# Override/specify version and release number of output RPM packages
+ZFS_PKG_VERSION=2.2.3
+ZFS_PKG_RELEASE=100
 
 # fedora, kwizart, almalinux
 KRNVENDOR=fedora
 
 # 1 = set license to GPL v2
 ENABLE_LICENSE_PATCH=1
-# 1 = set specific ZFS package version and release
-ENABLE_VERSION_PATCH=1
-ZFS_SET_VERSION=2.2.3
-ZFS_SET_RELEASE=100
 KRNARCH=x86_64
 
 if [ "$KRNVENDOR" = "kwizart" ]; then
@@ -62,7 +61,6 @@ elif [ "$KRNVENDOR" = "almalinux" ]; then
   ENABLE_SPEC_PATCH=0
 fi
 
-ZFS_TARBALL_URL=https://github.com/openzfs/zfs/releases/download/zfs-${ZFSVER}/zfs-${ZFSVER}.tar.gz
 ZFS_GITHUB_REPO=https://github.com/openzfs/zfs.git
 
 if [ "$KRNVENDOR" = "kwizart" ]; then
