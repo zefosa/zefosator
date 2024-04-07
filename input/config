@@ -1,10 +1,17 @@
 #!/usr/bin/bash
 
-ZFSVER=2.2.3
+# git tag or branch name
+ZFSVER=2.2.4-staging
+
 # fedora, kwizart, almalinux
 KRNVENDOR=fedora
-# 1 = keisti licencija i GPL v2 pries buildinant
-ENABLE_META_PATCH=1
+
+# 1 = set license to GPL v2
+ENABLE_LICENSE_PATCH=1
+# 1 = set specific ZFS package version and release
+ENABLE_VERSION_PATCH=1
+ZFS_SET_VERSION=2.2.3
+ZFS_SET_RELEASE=100
 KRNARCH=x86_64
 
 if [ "$KRNVENDOR" = "kwizart" ]; then
@@ -27,8 +34,8 @@ elif [ "$KRNVENDOR" = "fedora" ]; then
   REPO_NAME=39
   # docker/podman image name
   BASE_IMAGE_NAME=fedora:${RELEASEVER}
-  KRNBRANCH=6.7
-  KRNREL=10
+  KRNBRANCH=6.8
+  KRNREL=4
   KRNFC=200.fc${RELEASEVER}
   ZFSRELEASE=1.fc${RELEASEVER}.${KRNARCH}
   KRNVER=${KRNBRANCH}.${KRNREL}
@@ -56,6 +63,7 @@ elif [ "$KRNVENDOR" = "almalinux" ]; then
 fi
 
 ZFS_TARBALL_URL=https://github.com/openzfs/zfs/releases/download/zfs-${ZFSVER}/zfs-${ZFSVER}.tar.gz
+ZFS_GITHUB_REPO=https://github.com/openzfs/zfs.git
 
 if [ "$KRNVENDOR" = "kwizart" ]; then
 # Kwizart LTS

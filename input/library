@@ -20,12 +20,11 @@ function prepare_all {
 
 function build_zfs_rpms {
   pushd /cache || return 1
-  if [ ! -f "zfs-${ZFSVER}.tar.gz" ]; then
-    echo "Downloading ZFS source tarball..."
+  if [ ! -d "zfs-${ZFSVER}" ]; then
+    echo "Checking out ZFS sources..."
     curl --no-progress-meter -LO "${ZFS_TARBALL_URL}"
+    git clone --depth 1 --branch zfs-${ZFSVER} ${ZFS_GITHUB_REPO} zfs-${ZFSVER}
   fi
-  rm -rf "${BUILD_DIR}/zfs-${ZFSVER}"
-  tar xzvf "zfs-${ZFSVER}.tar.gz"
 
   pushd "/cache/zfs-${ZFSVER}/rpm/generic" || return 1
   if [ "${ENABLE_SPEC_PATCH}" -eq 1 ]; then
@@ -36,11 +35,21 @@ function build_zfs_rpms {
 
   pushd "/cache/zfs-${ZFSVER}" || return 1
 
-  if [ "${ENABLE_META_PATCH}" -eq 1 ]; then
-    echo "Patching META..."
-    sed -i 's/CDDL/GPL v2/g' META
+  if [ "${ENABLE_LICENSE_PATCH}" -eq 1 ]; then
+    echo "Patching license..."
+    sed -i "s/License:.*/License:       GPL v2/" META    
   fi
 
+  if [ "${ENABLE_VERSION_PATCH}" -eq 1 ]; then
+    echo "Patching META version and release..."
+    sed -i "s/Version:.*/Version:       ${ZFS_SET_VERSION}/" META
+    sed -i "s/Release:.*/Release:       ${ZFS_SET_RELEASE}/" META
+  fi
+
+  if [ ! -f "zfs-${ZFSVER}/Makefile" ]; then
+    echo "Launching autogen..."
+    sh autogen.sh
+  fi
   
   if [ "$KRNVENDOR" = "fedora" ] || [ "$KRNVENDOR" = "kwizart" ]; then
     echo "Configuring ZFS kmod build..."
@@ -53,7 +62,7 @@ function build_zfs_rpms {
   fi
 
   echo "Building ZFS RPM packages..."
-  make -j1 rpm-kmod rpm-utils
+  make -s -j8 rpm-kmod rpm-utils
 
   popd || return 1
   popd || return 1
