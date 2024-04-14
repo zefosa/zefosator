@@ -11,9 +11,6 @@ source ./input/config
 source ./localconfig
 source ./library
 
-zfs_snapshot
-install_kernel_with_zfs
+update_initramfs
 list_initramfs_zfs
-list_versionlock
-print_kernel_changelog
 list_installed_kernels

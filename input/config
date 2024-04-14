@@ -4,7 +4,8 @@
 ZFS_GIT_TAG=2.2.4-staging
 # Override/specify version and release number of output RPM packages
 ZFS_PKG_VERSION=2.2.3
-ZFS_PKG_RELEASE=100
+# 100 + count of commits in next release staging branch
+ZFS_PKG_RELEASE=115
 
 # fedora, kwizart, almalinux
 KRNVENDOR=fedora
@@ -34,7 +35,7 @@ elif [ "$KRNVENDOR" = "fedora" ]; then
   # docker/podman image name
   BASE_IMAGE_NAME=fedora:${RELEASEVER}
   KRNBRANCH=6.8
-  KRNREL=4
+  KRNREL=6
   KRNFC=200.fc${RELEASEVER}
   ZFSRELEASE=1.fc${RELEASEVER}.${KRNARCH}
   KRNVER=${KRNBRANCH}.${KRNREL}
