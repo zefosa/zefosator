@@ -22,7 +22,11 @@ function build_zfs_rpms {
   pushd /cache || return 1
   if [ ! -d "zfs-${ZFS_GIT_TAG}" ]; then
     echo "Checking out ZFS sources..."
-    git clone --depth 1 --branch zfs-${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} zfs-${ZFS_GIT_TAG}
+    if [ -z "${ZFS_GIT_CHERRY_PICK_COMMITS}" ]; then
+      git clone --depth 1 --branch zfs-${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} zfs-${ZFS_GIT_TAG}
+    else 
+      git clone --branch zfs-${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} zfs-${ZFS_GIT_TAG}
+    fi
   fi
 
   pushd "/cache/zfs-${ZFS_GIT_TAG}/rpm/generic" || return 1
@@ -34,9 +38,24 @@ function build_zfs_rpms {
 
   pushd "/cache/zfs-${ZFS_GIT_TAG}" || return 1
 
+  if [ -n "${ZFS_GIT_CHERRY_PICK_COMMITS}" ]; then
+    echo "Cherry-picking additional commits..."
+    git config user.email "zefosator@build.system"
+    git config user.name "Zefosator Build System"
+    git stash || true
+    for i in "${ZFS_GIT_CHERRY_PICK_COMMITS[@]}"
+    do
+      git cherry-pick "${i}"
+    done
+    git stash pop || true
+  fi
+
+  # easiest way to force ZFS use our version number for packages
+  rm -rf "/cache/zfs-${ZFS_GIT_TAG}/.git" || true
+
   if [ "${ENABLE_LICENSE_PATCH}" -eq 1 ]; then
     echo "Patching license..."
-    sed -i "s/License:.*/License:       GPL v2/" META    
+    sed -i "s/License:.*/License:       GPL v2/" META
   fi
 
   echo "Patching META version and release..."

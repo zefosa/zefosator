@@ -2,10 +2,12 @@
 
 # git tag or branch name to checkout
 ZFS_GIT_TAG=2.2.4-staging
+# additional list of commits to cherry-pick before building
+ZFS_GIT_CHERRY_PICK_COMMITS=("4840f023afae7c4932c903cf3a436c02c6704e20")
 # Override/specify version and release number of output RPM packages
 ZFS_PKG_VERSION=2.2.3
 # 100 + count of commits in next release staging branch
-ZFS_PKG_RELEASE=115
+ZFS_PKG_RELEASE=143
 
 # fedora, kwizart, almalinux
 KRNVENDOR=fedora
@@ -14,29 +16,14 @@ KRNVENDOR=fedora
 ENABLE_LICENSE_PATCH=1
 KRNARCH=x86_64
 
-if [ "$KRNVENDOR" = "kwizart" ]; then
-  RELEASEVER=38
-  REPO_NAME=38
-  # docker/podman image name
-  BASE_IMAGE_NAME=fedora:${RELEASEVER}
-  KRNBRANCH=6.1
-  KRNREL=73
-  KRNFC=200.fc${RELEASEVER}
-  # reikalingas kwizart kernelio URL gabalas
-  KWIZART_BUILD_ID=06905852
-  ZFSRELEASE=1.fc${RELEASEVER}.${KRNARCH}
-  KRNVER=${KRNBRANCH}.${KRNREL}
-  KRNRELEASE=${KRNFC}.${KRNARCH}
-  # 1 = ismesti is RPM SPEC BuildRequires, kai kernel-devel paketas vadinasi kitaip
-  ENABLE_SPEC_PATCH=1
-elif [ "$KRNVENDOR" = "fedora" ]; then
-  RELEASEVER=39
-  REPO_NAME=39
+if [ "$KRNVENDOR" = "fedora" ]; then
+  RELEASEVER=40
+  REPO_NAME=40
   # docker/podman image name
   BASE_IMAGE_NAME=fedora:${RELEASEVER}
   KRNBRANCH=6.8
-  KRNREL=6
-  KRNFC=200.fc${RELEASEVER}
+  KRNREL=8
+  KRNFC=300.fc${RELEASEVER}
   ZFSRELEASE=1.fc${RELEASEVER}.${KRNARCH}
   KRNVER=${KRNBRANCH}.${KRNREL}
   KRNRELEASE=${KRNFC}.${KRNARCH}
@@ -60,6 +47,21 @@ elif [ "$KRNVENDOR" = "almalinux" ]; then
   KRNRELEASE=${KRN_EL}.${KRNARCH}
   # 1 = ismesti is RPM SPEC BuildRequires, kai kernel-devel paketas vadinasi kitaip
   ENABLE_SPEC_PATCH=0
+elif [ "$KRNVENDOR" = "kwizart" ]; then
+  RELEASEVER=38
+  REPO_NAME=38
+  # docker/podman image name
+  BASE_IMAGE_NAME=fedora:${RELEASEVER}
+  KRNBRANCH=6.1
+  KRNREL=73
+  KRNFC=200.fc${RELEASEVER}
+  # reikalingas kwizart kernelio URL gabalas
+  KWIZART_BUILD_ID=06905852
+  ZFSRELEASE=1.fc${RELEASEVER}.${KRNARCH}
+  KRNVER=${KRNBRANCH}.${KRNREL}
+  KRNRELEASE=${KRNFC}.${KRNARCH}
+  # 1 = ismesti is RPM SPEC BuildRequires, kai kernel-devel paketas vadinasi kitaip
+  ENABLE_SPEC_PATCH=1
 fi
 
 ZFS_GITHUB_REPO=https://github.com/openzfs/zfs.git
