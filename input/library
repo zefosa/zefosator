@@ -1,13 +1,14 @@
 #!/usr/bin/bash
 
 function prepare_all {
+  echo $KRN_VENDOR
   download_kernel_rpms
 
   pushd /cache/kernel-rpms || return 1
-  if [ "$KRNVENDOR" = "fedora" ] || [ "$KRNVENDOR" = "kwizart" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
     pkgfile=${KERNEL_DEVEL_PKG##*/}
     dnf install -y "${pkgfile}"
-  elif [ "$KRNVENDOR" = "almalinux" ]; then
+  elif [ "$KRN_VENDOR" = "almalinux" ]; then
     pkgfile1=${KERNEL_DEVEL_PKG##*/}
     pkgfile2=${KERNEL_ABI_PKG##*/}
     dnf install -y "./${pkgfile1}" "./${pkgfile2}"
@@ -20,23 +21,23 @@ function prepare_all {
 
 function build_zfs_rpms {
   pushd /cache || return 1
-  if [ ! -d "zfs-${ZFS_GIT_TAG}" ]; then
+  if [ ! -d "${ZFS_GIT_TAG}" ]; then
     echo "Checking out ZFS sources..."
     if [ -z "${ZFS_GIT_CHERRY_PICK_COMMITS}" ]; then
-      git clone --depth 1 --branch zfs-${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} zfs-${ZFS_GIT_TAG}
+      git clone --depth 1 --branch ${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} ${ZFS_GIT_TAG}
     else 
-      git clone --branch zfs-${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} zfs-${ZFS_GIT_TAG}
+      git clone --branch ${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} ${ZFS_GIT_TAG}
     fi
   fi
 
-  pushd "/cache/zfs-${ZFS_GIT_TAG}/rpm/generic" || return 1
+  pushd "/cache/${ZFS_GIT_TAG}/rpm/generic" || return 1
   if [ "${ENABLE_SPEC_PATCH}" -eq 1 ]; then
     echo "Patching ZFS kmod RPM spec..."
     patch < /input/patches/zfs-kmod-spec.patch
   fi
   popd || return 1
 
-  pushd "/cache/zfs-${ZFS_GIT_TAG}" || return 1
+  pushd "/cache/${ZFS_GIT_TAG}" || return 1
 
   if [ -n "${ZFS_GIT_CHERRY_PICK_COMMITS}" ]; then
     echo "Cherry-picking additional commits..."
@@ -51,7 +52,7 @@ function build_zfs_rpms {
   fi
 
   # easiest way to force ZFS use our version number for packages
-  rm -rf "/cache/zfs-${ZFS_GIT_TAG}/.git" || true
+  rm -rf "/cache/${ZFS_GIT_TAG}/.git" || true
 
   if [ "${ENABLE_LICENSE_PATCH}" -eq 1 ]; then
     echo "Patching license..."
@@ -62,15 +63,15 @@ function build_zfs_rpms {
   sed -i "s/Version:.*/Version:       ${ZFS_PKG_VERSION}/" META
   sed -i "s/Release:.*/Release:       ${ZFS_PKG_RELEASE}/" META
 
-  if [ ! -f "zfs-${ZFS_GIT_TAG}/Makefile" ]; then
+  if [ ! -f "${ZFS_GIT_TAG}/Makefile" ]; then
     echo "Launching autogen..."
     sh autogen.sh
   fi
   
-  if [ "$KRNVENDOR" = "fedora" ] || [ "$KRNVENDOR" = "kwizart" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
     echo "Configuring ZFS kmod build..."
     ./configure
-  elif [ "$KRNVENDOR" = "almalinux" ]; then
+  elif [ "$KRN_VENDOR" = "almalinux" ]; then
     echo "Configuring ZFS kABI-tracking kmod build..."
     # https://openzfs.github.io/openzfs-docs/Developer%20Resources/Custom%20Packages.html
     # kol kas kABI yra atjungtas ir mes kaip ir Fedora atveju buildinam paketus konkrečioms kernel versijoms
@@ -85,7 +86,7 @@ function build_zfs_rpms {
 }
 
 function move_zfs_rpms {
-  pushd "/cache/zfs-${ZFS_GIT_TAG}" || return 1
+  pushd "/cache/${ZFS_GIT_TAG}" || return 1
 
   echo "Copying ZFS kmod packages to output dir..."
   # i kernel paketu output direktorija perkeliam kmod paketus  
@@ -133,11 +134,11 @@ function patch_kernel_meta_rpm {
   echo "Patching ${pkgfile} package requirements..."
   # pridedam kmod-zfs requirement i kernel.rpm SPEC
   # rezultatas yra modifikuotas RPM failas /cache/kernel-rpms/x86_64 direktorijoje
-  if [ "$KRNVENDOR" = "fedora" ] || [ "$KRNVENDOR" = "kwizart" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
     rpmrebuild --directory=/cache/kernel-rpms \
       --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRNVER}-${KRNRELEASE} >= ${ZFS_PKG_VERSION}')" \
       -p "/cache/kernel-rpms/${pkgfile}"
-  elif [ "$KRNVENDOR" = "almalinux" ]; then    
+  elif [ "$KRN_VENDOR" = "almalinux" ]; then    
     rpmrebuild --directory=/cache/kernel-rpms \
       --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRNVER}.${KRNRELEASE} >= ${ZFS_PKG_VERSION}')" \
       -p "/cache/kernel-rpms/${pkgfile}"
@@ -156,21 +157,22 @@ function move_kernel_rpms {
     cp -nv "/cache/kernel-rpms/$pkgfile" /output/kernel/
   done
   pkgfile=${KERNEL_META_PKG##*/}
-  cp -fv "/cache/kernel-rpms/${KRNARCH}/${pkgfile}" /output/kernel/
+  cp -fv "/cache/kernel-rpms/${KRN_ARCH}/${pkgfile}" /output/kernel/
 }
 
 function cleanup_zfs {
   echo "Cleaning ZFS build dir..."
-  rm -rf "/cache/zfs-${ZFS_GIT_TAG}"
+  rm -rf "/cache/${ZFS_GIT_TAG}"
 }
 
 function cleanup_kernel {
   echo "Cleaning rebuilt kernel packages dir..."
-  rm -rf "/cache/kernel-rpms/${KRNARCH}"
+  rm -rf "/cache/kernel-rpms/${KRN_ARCH}"
 }
 
 function update_repo {
   # regenerate repo metadata
+  mkdir -p /repo/repodata  
   rm -f /repo/repodata/*
   createrepo /repo
 }

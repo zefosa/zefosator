@@ -1,0 +1,177 @@
+#!/usr/bin/bash
+
+# https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
+PARAMS=""
+while (( "$#" )); do
+  case "$1" in
+    -h|--help)
+      shift
+      ;;
+    --git-tag)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        ZFS_GIT_TAG=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --pkg-version)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        ZFS_PKG_VERSION=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --pkg-release)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        ZFS_PKG_RELEASE=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --krn-vendor)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        KRN_VENDOR=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --krn-version)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        KRN_VERSION=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --krn-release)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        KRN_RELEASE=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --os-version)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        OS_VERSION_MAJOR=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --os-version-minor)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        OS_VERSION_MINOR=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --krn-arch)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        KRN_ARCH=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --kwizart-build-id)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        KWIZART_BUILD_ID=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --kernel-repo-dir)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        KERNEL_REPO_DIR=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --userspace-repo-dir)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        USERSPACE_REPO_DIR=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --snapshot-dataset)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        SNAP_DATASET=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    --patch-license)
+      ENABLE_LICENSE_PATCH=1
+      shift
+      ;;
+    -*|--*=) # unsupported flags
+      echo "Error: Unsupported flag $1" >&2
+      exit 1
+      ;;
+    *) # preserve positional arguments
+      PARAMS="$PARAMS $1"
+      shift
+      ;;
+  esac
+done
+# set positional arguments in their proper place
+eval set -- "$PARAMS"
+
+show_help() {
+  echo "Arguments:"
+  echo "     --git-tag     Required. Git tag or branch name to checkout, e.g."
+  echo "                   zfs-2.2.4 or zfs-2.2.5-staging or master"
+  echo "     --pkg-version Required. Version for OpenZFS packages, e.g. 2.2.4"  
+  echo "     --pkg-release Required. Release number for OpenZFS packages, e.g. 1"
+  echo "     --krn-vendor  Optional. Kernel vendor name, allowed values:"
+  echo "                   fedora (default), kwizart, almalinux"
+  echo "     --krn-version Required. Kernel version to build OpenZFS packages for, e.g."
+  echo "                   6.8.9 for Fedora or 5.14.0 for AlmaLinux"
+  echo "     --krn-release Required. Kernel release number to build OpenZFS packages for, e.g."
+  echo "                   300 for Fedora, 362.18.1 for AlmaLinux"
+  echo "     --krn-arch    Optional. Kernel architecture to build OpenZFS packages for."
+  echo "                    Default: x86_64"
+  echo "     --os-version  Required. Major OS version, e.g. 40 for Fedora, 9 for AlmaLinux"
+  echo "     --os-version-minor"
+  echo "                   Required for AlmaLinux. Minor OS version, e.g. 3"
+  echo "     --kwizart-build-id"
+  echo "                   Required part of URL to download kwizart kernel packages, e.g."
+  echo "                   07383909, 07321133, ..."
+  echo "                   See https://download.copr.fedorainfracloud.org/results/kwizart/"
+  echo "     --kernel-repo-dir"
+  echo "                   Copy kernel packages and update repository metadata in this directory."
+  echo "     --userspace-repo-dir"
+  echo "                   Copy userspace packages and update repository metadata in this directory."
+  echo "     --snapshot-dataset"
+  echo "                   Create snapshot of this dataset before installing packages."
+  echo "     --patch-license"
+  echo "                   Set if you don't want 'tainted' kernel messages on your systems."
+  echo "  -h --help        Show help"
+  echo "  "
+  echo "     Remaining arguments are treated as list of Git commits to cherry-pick"
+  echo "     on top of checked out branch before starting autoconf and build scripts."  
+}

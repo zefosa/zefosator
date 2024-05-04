@@ -2,8 +2,8 @@
 
 set -e
 
-source ./config
-source ./library
+source /cache/variables
+source /input/library
 
 for arg in "$@"
 do
