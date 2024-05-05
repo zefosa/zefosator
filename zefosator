@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+set -e
+source ./args_parser
+
+if [ -n "${DO_BUILD}" ] && \
+    [ -n "${ZFS_GIT_TAG}" ] && [ -n "${ZFS_PKG_VERSION}" ] && [ -n "${ZFS_PKG_RELEASE}" ] && \
+    [ -n "${KRN_VERSION}" ] && [ -n "${KRN_RELEASE}" ] && [ -n "${OS_VERSION}" ]; then
+  if [ "$(id -u)" -eq 0 ]
+    then echo "Please run as non-root"
+    exit
+  fi
+  source ./config 
+  source ./library
+  create_variables_file
+  build_image
+  make_all_rpms
+elif [ -n "${DO_PUBLISH}" ] && \
+    [ -n "${KERNEL_REPO_DIR}" ] && [ -n "${USERSPACE_REPO_DIR}" ] && \
+    [ -n "${ZFS_PKG_VERSION}" ] && [ -n "${ZFS_PKG_RELEASE}" ] && \
+    [ -n "${KRN_VERSION}" ] && [ -n "${KRN_RELEASE}" ] && [ -n "${OS_VERSION}" ]; then
+  if [ "$(id -u)" -eq 0 ]
+    then echo "Please run as non-root"
+    exit
+  fi
+  source ./config
+  source ./library
+  create_variables_file
+  build_image
+  copy_zfs_userspace_rpms_to_repos
+  update_userspace_repo
+  copy_zfs_kmod_rpms_to_repos
+  copy_kernel_rpms_to_repos
+  update_kernel_repo
+  list_kernel_repo
+  list_userspace_repo
+elif [ -n "${DO_INSTALL}" ] && \
+    [ -n "${ZFS_PKG_VERSION}" ] && [ -n "${OS_VERSION}" ] && \
+    [ -n "${KRN_VERSION}" ] && [ -n "${KRN_RELEASE}" ]; then
+  if [ "$(id -u)" -ne 0 ]
+    then echo "Please run as root"
+    exit
+  fi
+  source ./config
+  source ./library
+  zfs_snapshot
+  install_kernel_with_zfs
+  list_initramfs_zfs
+  list_versionlock
+  print_kernel_changelog
+  list_installed_kernels
+elif [ -n "${DO_INITRAMFS}" ] && \
+    [ -n "${KRN_VERSION}" ] && [ -n "${KRN_RELEASE}" ] && [ -n "${OS_VERSION}" ]; then
+  if [ "$(id -u)" -ne 0 ]
+    then echo "Please run as root"
+    exit
+  fi
+  source ./config
+  source ./library
+  update_initramfs
+  list_initramfs_zfs
+  list_installed_kernels
+else
+  show_help
+fi

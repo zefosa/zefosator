@@ -1,10 +1,26 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 # https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
 PARAMS=""
 while (( "$#" )); do
   case "$1" in
     -h|--help)
+      shift
+      ;;
+    -b|--build)
+      DO_BUILD=1
+      shift
+      ;;
+    -p|--publish)
+      DO_PUBLISH=1
+      shift
+      ;;
+    -i|--install)
+      DO_INSTALL=1
+      shift
+      ;;
+    --initramfs)
+      DO_INITRAMFS=1
       shift
       ;;
     --git-tag)
@@ -63,16 +79,7 @@ while (( "$#" )); do
       ;;
     --os-version)
       if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-        OS_VERSION_MAJOR=$2
-        shift 2
-      else
-        echo "Error: Argument for $1 is missing" >&2
-        exit 1
-      fi
-      ;;
-    --os-version-minor)
-      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-        OS_VERSION_MINOR=$2
+        OS_VERSION=$2
         shift 2
       else
         echo "Error: Argument for $1 is missing" >&2
@@ -142,36 +149,50 @@ done
 eval set -- "$PARAMS"
 
 show_help() {
-  echo "Arguments:"
-  echo "     --git-tag     Required. Git tag or branch name to checkout, e.g."
+  echo "Actions:"
+  echo "  -b --build       Build matching collection of OpenZFS and kernel RPM packages."
+  echo "  -p --publish     Copy built packages to userspace and kernel RPM repository"
+  echo "                   directories and update their metadata."
+  echo "  -i --install     Install specific version kernel and OpenZFS packages to current system."
+  echo "                   Optionally create filesystem snapshot before installing."
+  echo "  -h --help        Show this information."
+  echo " "
+  echo "Parameters:"
+  echo "     --git-tag <branch/tag>"
+  echo "                   Required. Git tag or branch name to checkout, e.g."
   echo "                   zfs-2.2.4 or zfs-2.2.5-staging or master"
-  echo "     --pkg-version Required. Version for OpenZFS packages, e.g. 2.2.4"  
-  echo "     --pkg-release Required. Release number for OpenZFS packages, e.g. 1"
-  echo "     --krn-vendor  Optional. Kernel vendor name, allowed values:"
-  echo "                   fedora (default), kwizart, almalinux"
-  echo "     --krn-version Required. Kernel version to build OpenZFS packages for, e.g."
+  echo "     --pkg-version <openzfs_version>"
+  echo "                   Required. Version for OpenZFS packages, e.g. 2.2.4"  
+  echo "     --pkg-release <openzfs_release>"
+  echo "                   Required. Release number for OpenZFS packages, e.g. 1"
+  echo "     --krn-version <kernel_version>"
+  echo "                   Required. Kernel version to build OpenZFS packages for, e.g."
   echo "                   6.8.9 for Fedora or 5.14.0 for AlmaLinux"
-  echo "     --krn-release Required. Kernel release number to build OpenZFS packages for, e.g."
+  echo "     --krn-release <kernel_release>"
+  echo "                   Required. Kernel release number to build OpenZFS packages for, e.g."
   echo "                   300 for Fedora, 362.18.1 for AlmaLinux"
-  echo "     --krn-arch    Optional. Kernel architecture to build OpenZFS packages for."
-  echo "                    Default: x86_64"
-  echo "     --os-version  Required. Major OS version, e.g. 40 for Fedora, 9 for AlmaLinux"
-  echo "     --os-version-minor"
-  echo "                   Required for AlmaLinux. Minor OS version, e.g. 3"
-  echo "     --kwizart-build-id"
+  echo "     --os-version <os_version>"
+  echo "                   Required. OS version, e.g. 40 for Fedora, 9.3 for AlmaLinux"
+  echo "     --krn-arch <cpu_arch>"
+  echo "                   Optional. Kernel architecture to build OpenZFS packages for."
+  echo "                   Only x86_64 is currently supported and set by default."
+  echo "     --krn-vendor <kernel_vendor>"
+  echo "                   Optional. Kernel vendor name, allowed values:"
+  echo "                   fedora (default), kwizart, almalinux"
+  echo "     --kwizart-build-id <number>"
   echo "                   Required part of URL to download kwizart kernel packages, e.g."
   echo "                   07383909, 07321133, ..."
   echo "                   See https://download.copr.fedorainfracloud.org/results/kwizart/"
-  echo "     --kernel-repo-dir"
+  echo "     --kernel-repo-dir <directory_path>"
   echo "                   Copy kernel packages and update repository metadata in this directory."
-  echo "     --userspace-repo-dir"
+  echo "     --userspace-repo-dir <directory_path>"
   echo "                   Copy userspace packages and update repository metadata in this directory."
-  echo "     --snapshot-dataset"
+  echo "     --snapshot-dataset <zfs_dataset>"
   echo "                   Create snapshot of this dataset before installing packages."
   echo "     --patch-license"
   echo "                   Set if you don't want 'tainted' kernel messages on your systems."
-  echo "  -h --help        Show help"
   echo "  "
-  echo "     Remaining arguments are treated as list of Git commits to cherry-pick"
-  echo "     on top of checked out branch before starting autoconf and build scripts."  
+  echo "Other arguments:"
+  echo "     Any additional arguments are treated as list of Git commits to cherry-pick"
+  echo "     on top of checked out branch/tag before starting autoconf and build scripts."  
 }

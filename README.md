@@ -9,11 +9,22 @@
 3. Modify OS kernel package to depend on OpenZFS RPM kmod package.
 4. Copy all artifacts to `output` directory.
 
+Building OpenZFS 2.2.4 for Fedora 40 kernel 6.8.9-300:
 ```
-./1_build.sh --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1 --os-version 40 --krn-version 6.8.9 --krn-release 300 
+./zefosator --build --os-version 40 --krn-version 6.8.9 --krn-release 300 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1  
 ```
 
-## Step 2. Create/update DNF repositories
+Building OpenZFS 2.2.4 for Fedora 39 kwizart LTS kernel 6.6.29-200:
+```
+./zefosator --build --krn-vendor kwizart --os-version 39 --krn-version 6.6.29 --krn-release 200 --kwizart-build-id 07383909 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
+```
+
+Building OpenZFS 2.2.4 for AlmaLinux 9.3 kernel 5.14.0-362.24.1:
+```
+./zefosator --build --krn-vendor almalinux --os-version 9.3 --krn-version 5.14.0 --krn-release 362.24.1 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
+```
+
+## Step 2. Publish RPM packages to DNF repositories
 
 1. Copy relevant kernel RPM packages to OpenZFS kernel packages repository directory.
 2. Update repository metadata.
@@ -22,14 +33,14 @@
 5. TODO: rsync repository with remote webserver.
 
 ```
-./2_update_repos.sh --pkg-version 2.2.4 --pkg-release 1 --os-version 40 --krn-version 6.8.9 --krn-release 300 --kernel-repo-dir /home/giedriusm/Repo/zfs/40/kernel --userspace-repo-dir /home/giedriusm/Repo/zfs/40/user
+./zefosator --publish --pkg-version 2.2.4 --pkg-release 1 --os-version 40 --krn-version 6.8.9 --krn-release 300 --kernel-repo-dir /home/giedriusm/Repo/zfs/40/kernel --userspace-repo-dir /home/giedriusm/Repo/zfs/40/user
 ```
 
-## Step 3. Install/upgrade kernel+OpenZFS packages
+## Step 3. Install/upgrade kernel+OpenZFS packages on local system
 
 1. Optional. Create local ZFS snapshot before making package upgrades. Remove `--snapshot-dataset` parameter if not required.
 2. Upgrade kernel and OpenZFS packages in single DNF transaction.
 
 ```
-./3_install.sh --pkg-version 2.2.4 --pkg-release 1 --os-version 40 --krn-version 6.8.9 --krn-release 300 --snapshot-dataset gmp1/fedora/40
+./zefosator --install --pkg-version 2.2.4 --pkg-release 1 --os-version 40 --krn-version 6.8.9 --krn-release 300 --snapshot-dataset gmp1/fedora/40
 ```

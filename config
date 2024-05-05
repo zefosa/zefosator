@@ -1,4 +1,13 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
+
+OS_VERSION_NUMBERS=($(echo "${OS_VERSION#[vV]}" | tr '.' '\n'))
+OS_VERSION_MAJOR="${OS_VERSION_NUMBERS[0]}"
+OS_VERSION_MINOR="${OS_VERSION_NUMBERS[1]}"
+
+KRN_VERSION_NUMBERS=($(echo "${KRN_VERSION#[vV]}" | tr '.' '\n'))
+KRN_VERSION_MAJOR="${KRN_VERSION_NUMBERS[0]}"
+KRN_VERSION_MINOR="${KRN_VERSION_NUMBERS[1]}"
+KRN_VERSION_PATCH="${KRN_VERSION_NUMBERS[2]}"
 
 # default --krn-vendor
 KRN_VENDOR=${KRN_VENDOR:=fedora}
@@ -53,8 +62,10 @@ elif [ "$KRN_VENDOR" = "kwizart" ]; then
   ENABLE_SPEC_PATCH=1
   KERNEL_PKG_BASE_NAME=kernel-longterm
   # This is required part of URL to download kwizart kernel packages
-  ${KWIZART_BUILD_ID:=undefined}
-  KERNEL_URL_DIR=https://download.copr.fedorainfracloud.org/results/kwizart/${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}/fedora-${OS_VERSION_MAJOR}-${KRN_ARCH}/${KWIZART_BUILD_ID}-${KERNEL_PKG_BASE_NAME}
+  KWIZART_BUILD_ID=${KWIZART_BUILD_ID:=undefined}  
+  # https://download.copr.fedorainfracloud.org/results/kwizart/kernel-longterm-6.6/fedora-39-x86_64/07383909-kernel-longterm/
+  KERNEL_URL_DIR=https://download.copr.fedorainfracloud.org/results/kwizart/kernel-longterm-${KRN_VERSION_MAJOR}.${KRN_VERSION_MINOR}/fedora-${OS_VERSION_MAJOR}-${KRN_ARCH}/${KWIZART_BUILD_ID}-kernel-longterm
+  # kernel-longterm-devel-6.6.29-200.fc39.x86_64.rpm
   KERNEL_META_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm
   KERNEL_DEVEL_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm
   KERNEL_PACKAGES=( \

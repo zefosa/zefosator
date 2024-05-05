@@ -1,7 +1,6 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 set -e
-
 source /cache/variables
 source /input/library
 
