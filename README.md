@@ -9,9 +9,14 @@
 3. Modify OS kernel package to depend on OpenZFS RPM kmod package.
 4. Copy all artifacts to `output` directory.
 
-Building OpenZFS 2.2.4 for Fedora 40 kernel 6.8.9-300:
+Build latest Fedora 39 kernel with latest OpenZFS release using prepared parameters file:
 ```
-./zefosator --build --os-version 40 --krn-version 6.8.9 --krn-release 300 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1  
+./zefosator --build --params-file params/fedora-39.params
+```
+
+Building with custom parameters, e.g. OpenZFS 2.2.4 for Fedora 40 kernel 6.8.9-300:
+```
+./zefosator --build --os-version 40 --krn-version 6.8.9 --krn-release 300 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
 ```
 
 Building OpenZFS 2.2.4 for Fedora 39 kwizart LTS kernel 6.6.29-200:
@@ -19,9 +24,9 @@ Building OpenZFS 2.2.4 for Fedora 39 kwizart LTS kernel 6.6.29-200:
 ./zefosator --build --krn-vendor kwizart --os-version 39 --krn-version 6.6.29 --krn-release 200 --kwizart-build-id 07383909 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
 ```
 
-Building OpenZFS 2.2.4 for AlmaLinux 9.3 kernel 5.14.0-362.24.1:
+Building OpenZFS 2.2.4 for AlmaLinux 9.4 kernel 5.14.0-362.24.1:
 ```
-./zefosator --build --krn-vendor almalinux --os-version 9.3 --krn-version 5.14.0 --krn-release 362.24.1 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
+./zefosator --build --krn-vendor almalinux --os-version 9.4 --krn-version 5.14.0 --krn-release 427.13.1 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
 ```
 
 ## Step 2. Publish RPM packages to DNF repositories
@@ -32,8 +37,14 @@ Building OpenZFS 2.2.4 for AlmaLinux 9.3 kernel 5.14.0-362.24.1:
 4. Update repository metadata.
 5. TODO: rsync repository with remote webserver.
 
+Fedora 40:
 ```
 ./zefosator --publish --pkg-version 2.2.4 --pkg-release 1 --os-version 40 --krn-version 6.8.9 --krn-release 300 --kernel-repo-dir /home/giedriusm/Repo/zfs/40/kernel --userspace-repo-dir /home/giedriusm/Repo/zfs/40/user
+```
+
+AlmaLinux 9.4:
+```
+./zefosator --publish  --krn-vendor almalinux --os-version 9.4 --krn-version 5.14.0 --krn-release 427.13.1 --pkg-version 2.2.4 --pkg-release 1 --kernel-repo-dir /home/giedriusm/Repo/zfs/el9/kernel --userspace-repo-dir /home/giedriusm/Repo/zfs/el9/user
 ```
 
 ## Step 3. Install/upgrade kernel+OpenZFS packages on local system

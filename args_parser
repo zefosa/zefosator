@@ -23,6 +23,15 @@ while (( "$#" )); do
       DO_INITRAMFS=1
       shift
       ;;
+    --params-file)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        PARAMS_FILE=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
     --git-tag)
       if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
         ZFS_GIT_TAG=$2
@@ -191,6 +200,8 @@ show_help() {
   echo "                   Create snapshot of this dataset before installing packages."
   echo "     --patch-license"
   echo "                   Set if you don't want 'tainted' kernel messages on your systems."
+  echo "     --params-file <file_name>"
+  echo "                   Optional. Load required/optional parameters from file."
   echo "  "
   echo "Other arguments:"
   echo "     Any additional arguments are treated as list of Git commits to cherry-pick"

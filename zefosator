@@ -3,6 +3,10 @@
 set -e
 source ./args_parser
 
+if [ -n "${PARAMS_FILE}" ]; then
+  source "${PARAMS_FILE}"
+fi
+
 if [ -n "${DO_BUILD}" ] && \
     [ -n "${ZFS_GIT_TAG}" ] && [ -n "${ZFS_PKG_VERSION}" ] && [ -n "${ZFS_PKG_RELEASE}" ] && \
     [ -n "${KRN_VERSION}" ] && [ -n "${KRN_RELEASE}" ] && [ -n "${OS_VERSION}" ]; then
