@@ -139,7 +139,7 @@ function list_userspace_repo {
 
 function zfs_snapshot {
   if [ -n "${SNAP_DATASET}" ]; then 
-    zfs snap "${SNAP_DATASET}@before-update-$(date +%Y%m%d)"
+    zfs snap "${SNAP_DATASET}@before-update-$(date +%Y%m%d)" || true
   fi
 }
 
