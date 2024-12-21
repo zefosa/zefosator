@@ -49,7 +49,7 @@ function build_image {
 		ENTRYPOINT ["/input/entrypoint.sh"]
 		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
 __EODF
-  elif [ "$KRN_VENDOR" = "almalinux" ]; then
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
     read -r -d '' DF <<- __EODF
 		FROM ${BASE_IMAGE_NAME} as base
 		RUN mkdir /input
@@ -62,9 +62,23 @@ __EODF
 		ENTRYPOINT ["/input/entrypoint.sh"]
 		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
 __EODF
+  elif [ "$KRN_VENDOR" = "almalinux8" ]; then
+    read -r -d '' DF <<- __EODF
+		FROM ${BASE_IMAGE_NAME} as base
+		RUN mkdir /input
+		RUN mkdir /cache
+		RUN mkdir /output
+		VOLUME [ "/input", "/cache", "/output", "/repo" ]
+		RUN dnf install -y ${STANDARD_PACKAGES}
+		RUN dnf install -y --enablerepo=epel --enablerepo=powertools ${EXTRA_PACKAGES}
+		WORKDIR /input
+		ENTRYPOINT ["/input/entrypoint.sh"]
+		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
+__EODF
   fi
 
   set -e
+  podman pull "${BASE_IMAGE_NAME}"
   echo "${DF}" | podman build --tag "${IMAGE_NAME}" -f -
 }
 
@@ -76,7 +90,7 @@ function make_all_rpms {
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "./output:/output:Z" \
-    "${IMAGE_NAME}" prepare zfs_rpms kernel_rpms cleanup
+    "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 
 function update_kernel_repo {
@@ -128,13 +142,13 @@ function copy_kernel_rpms_to_repos {
 }
 
 function list_kernel_repo {
-  echo "Packages in kernel repo (${KERNEL_REPO_DIR}/${KRN_ARCH})"
-  ls -lth "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/"
+  echo "Latest packages in kernel repo (${KERNEL_REPO_DIR}/${KRN_ARCH})"
+  ls -lth "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/" | head -n 20
 }
 
 function list_userspace_repo {
-  echo "Packages in userspace repo (${USERSPACE_REPO_DIR}/${KRN_ARCH})"
-  ls -lth "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/"
+  echo "Latest packages in userspace repo (${USERSPACE_REPO_DIR}/${KRN_ARCH})"
+  ls -lth "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" | head -n 20
 }
 
 function zfs_snapshot {
@@ -144,8 +158,8 @@ function zfs_snapshot {
 }
 
 function install_kernel_with_zfs {
-  dnf versionlock delete kernel kernel-core kernel-modules kernel-modules-extra kernel-longterm kernel-longterm-core kernel-longterm-modules kernel-longterm-modules-extra  
-  sudo dnf upgrade "${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "zfs-${ZFS_PKG_VERSION}" "python3-pyzfs-${ZFS_PKG_VERSION}" "zfs-dracut-${ZFS_PKG_VERSION}" "kmod-zfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
+  dnf versionlock delete kernel kernel-core kernel-modules kernel-modules-extra kernel-longterm kernel-longterm-core kernel-longterm-modules kernel-longterm-modules-extra
+  sudo dnf install "${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "zfs-${ZFS_PKG_VERSION}" "python3-pyzfs-${ZFS_PKG_VERSION}" "zfs-dracut-${ZFS_PKG_VERSION}" "kmod-zfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
   dnf versionlock add kernel kernel-core kernel-modules kernel-modules-extra kernel-longterm kernel-longterm-core kernel-longterm-modules kernel-longterm-modules-extra
 }
 

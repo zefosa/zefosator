@@ -1,0 +1,10 @@
+OS_VERSION=8.10
+KRN_VENDOR=almalinux8
+KRN_VERSION=4.18.0
+KRN_RELEASE=553.22.1
+KRN_ARCH=x86_64
+ZFS_GIT_TAG=zfs-2.2.6
+ZFS_PKG_VERSION=2.2.6
+ZFS_PKG_RELEASE=1
+KERNEL_REPO_DIR=/home/giedriusm/Repo/zfs/el8/kernel
+USERSPACE_REPO_DIR=/home/giedriusm/Repo/zfs/el8/user

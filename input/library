@@ -8,7 +8,11 @@ function prepare_all {
   if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
     pkgfile=${KERNEL_DEVEL_PKG##*/}
     dnf install -y "${pkgfile}"
-  elif [ "$KRN_VENDOR" = "almalinux" ]; then
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    pkgfile1=${KERNEL_DEVEL_PKG##*/}
+    pkgfile2=${KERNEL_ABI_PKG##*/}
+    dnf install -y "./${pkgfile1}" "./${pkgfile2}"
+  elif [ "$KRN_VENDOR" = "almalinux8" ]; then
     pkgfile1=${KERNEL_DEVEL_PKG##*/}
     pkgfile2=${KERNEL_ABI_PKG##*/}
     dnf install -y "./${pkgfile1}" "./${pkgfile2}"
@@ -63,6 +67,9 @@ function build_zfs_rpms {
   sed -i "s/Version:.*/Version:       ${ZFS_PKG_VERSION}/" META
   sed -i "s/Release:.*/Release:       ${ZFS_PKG_RELEASE}/" META
 
+  echo "Patching META supported kernel version..."
+  sed -i "s/Linux-Maximum:.*/Linux-Maximum: ${KRN_VERSION_MAJOR}.${KRN_VERSION_MINOR}/" META
+
   if [ ! -f "${ZFS_GIT_TAG}/Makefile" ]; then
     echo "Launching autogen..."
     sh autogen.sh
@@ -71,7 +78,7 @@ function build_zfs_rpms {
   if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
     echo "Configuring ZFS kmod build..."
     ./configure
-  elif [ "$KRN_VENDOR" = "almalinux" ]; then
+  elif [ "$KRN_VENDOR" = "almalinux9" ] || [ "$KRN_VENDOR" = "almalinux8" ]; then
     echo "Configuring ZFS kABI-tracking kmod build..."
     # https://openzfs.github.io/openzfs-docs/Developer%20Resources/Custom%20Packages.html
     # kol kas kABI yra atjungtas ir mes kaip ir Fedora atveju buildinam paketus konkrečioms kernel versijoms
@@ -120,7 +127,11 @@ function download_kernel_rpms {
     pkgfile=${i##*/}
     if [ ! -f "$pkgfile" ]; then
       echo "Downloading: $pkgfile"
-      curl --no-progress-meter -LO "$i"
+      if [ "$KRN_VENDOR" = "almalinux8" ]; then
+        curl -LO "$i"
+      else
+        curl -v --no-progress-meter -LO "$i"
+      fi
     fi
   done
 
@@ -139,7 +150,7 @@ function patch_kernel_meta_rpm {
     rpmrebuild --directory=/cache/kernel-rpms \
       --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH} >= ${ZFS_PKG_VERSION}')" \
       -p "/cache/kernel-rpms/${pkgfile}"
-  elif [ "$KRN_VENDOR" = "almalinux" ]; then    
+  elif [ "$KRN_VENDOR" = "almalinux9" ] || [ "$KRN_VENDOR" = "almalinux8" ]; then    
     # Requires: kmod-zfs-5.14.0-427.16.1.el9_4.x86_64
     rpmrebuild --directory=/cache/kernel-rpms \
       --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH} >= ${ZFS_PKG_VERSION}')" \
