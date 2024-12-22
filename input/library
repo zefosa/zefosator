@@ -34,16 +34,31 @@ function prepare_kernel_sources {
   /usr/bin/rpmbuild -bp kernel.spec
   popd
 
-  # ~/rpmbuild/BUILD/kernel-6.11.11/linux-6.11.11-200.zfs.fc40.x86_64/
-  pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
-  cp ./configs/kernel-${KRN_VERSION}-${KRN_ARCH}.config .config
-  make prepare
-  popd
+  if [ "$KRN_VENDOR" = "fedora" ]; then
+    # ~/rpmbuild/BUILD/kernel-6.11.11/linux-6.11.11-200.zfs.fc40.x86_64/
+    pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
+    cp ./configs/kernel-${KRN_VERSION}-${KRN_ARCH}.config .config
+    make prepare
+    popd
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    # build/BUILD/kernel-5.14.0-503.16.1.el9_5/linux-5.14.0-503.16.1.zfs.el9.x86_64
+    pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}"
+    cp ./configs/kernel-${KRN_VERSION}-${KRN_ARCH}.config .config
+    make prepare
+    popd
+  fi
 
-  # ~/rpmbuild/BUILD/kernel-6.11.11
-  pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
-  cp -r "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig"
-  popd
+  if [ "$KRN_VENDOR" = "fedora" ]; then
+    # ~/rpmbuild/BUILD/kernel-6.11.11
+    pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
+    cp -r "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig"
+    popd
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    # build/BUILD/kernel-5.14.0-503.16.1.el9_5
+    pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}"
+    cp -r "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}" "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}.orig"
+    popd
+  fi
 }
 
 function prepare_zfs_sources {
@@ -94,9 +109,14 @@ function prepare_zfs_sources {
     sh autogen.sh
   fi
 
-  echo "Configuring ZFS builtin build..."
-  ./configure --enable-linux-builtin --with-linux="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/"
-  ./copy-builtin "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/"
+  echo "Configuring ZFS built-in build..."
+  if [ "$KRN_VENDOR" = "fedora" ]; then
+    ./configure --enable-linux-builtin --with-linux="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/"
+    ./copy-builtin "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/"
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    ./configure --enable-linux-builtin --with-linux="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}/"
+    ./copy-builtin "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}/"
+  fi
   popd
 }
 
@@ -123,14 +143,28 @@ function move_zfs_rpms {
 
 function build_kernel_rpms {
   set -e
-  echo "Preparing to build kernel packages..."
-  pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
-  diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
-    "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" \
-    > "$(rpm --eval "%{_sourcedir}")/openzfs.patch" || true
-  popd
+  echo "Making openzfs.patch..."
+  if [ "$KRN_VENDOR" = "fedora" ]; then
+    pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
+    diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
+      "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" \
+      > "$(rpm --eval "%{_sourcedir}")/openzfs.patch" || true
+    popd
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}"
+    diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
+      "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}" \
+      > "$(rpm --eval "%{_sourcedir}")/openzfs.patch" || true
+    popd
+  fi
   pushd "$(rpm --eval "%{_specdir}")"
   echo "Patching kernel RPM spec..."
+  if [ "$KRN_VENDOR" = "almalinux9" ]; then
+    # disable checks which cause this thing:
+    #   Found unset config items in arm64 aarch64-64k-debug, please set them to an appropriate value
+    #   CONFIG_ZFS=n
+    sed -i '/%bcond_with toolchain_clang/a\%define with_configchecks 0' kernel.spec
+  fi
   # Add "Patch1111: openzfs.patch" below "ApplyOptionalPatch linux-kernel-test.patch"
   sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1111: openzfs.patch' kernel.spec
   # Add "ApplyOptionalPatch openzfs.patch" below "ApplyOptionalPatch linux-kernel-test.patch"

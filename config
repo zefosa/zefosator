@@ -32,27 +32,39 @@ IMAGE_NAME=${IMAGE_NAME:=zefosator-image-fedora${OS_VERSION_MAJOR}}
 KERNEL_PKG_BASE_NAME=${KERNEL_PKG_BASE_NAME:=kernel}
 STANDARD_PACKAGES=""
 # RPM packages required to build kernel RPMs from source RPM
-STANDARD_PACKAGES+="asciidoc audit-libs-devel bindgen binutils-devel clang dracut dwarves "
-STANDARD_PACKAGES+="elfutils-devel fuse-devel gcc-c++ gettext glibc-static hmaccalc java-devel "
-STANDARD_PACKAGES+="kernel-rpm-macros libbabeltrace-devel libbpf-devel libcap-devel libcap-ng-devel "
-STANDARD_PACKAGES+="libmnl-devel libnl3-devel libtraceevent-devel libtracefs-devel lld llvm-devel "
+STANDARD_PACKAGES+="asciidoc audit-libs-devel binutils-devel clang dracut dwarves "
+STANDARD_PACKAGES+="elfutils-devel gcc-c++ gettext hmaccalc java-devel "
+STANDARD_PACKAGES+="kernel-rpm-macros libcap-devel libcap-ng-devel "
+STANDARD_PACKAGES+="libnl3-devel lld llvm-devel "
 STANDARD_PACKAGES+="lvm2 ncurses-devel net-tools newt-devel nss-tools numactl-devel pciutils-devel "
-STANDARD_PACKAGES+="perl-devel perl-generators pesign python3-docutils python3-pyyaml rust rust-src "
+STANDARD_PACKAGES+="perl-devel perl-generators pesign rust rust-src "
 STANDARD_PACKAGES+="systemd-boot-unsigned systemd-ukify tpm2-tools xmlto xz-devel perl-ExtUtils-Embed "
-STANDARD_PACKAGES+="wget rpmdevtools bc hostname python3-devel rsync "
+STANDARD_PACKAGES+="wget rpmdevtools bc hostname rsync "
 # RPM packages required to build ZFS RPMs
 STANDARD_PACKAGES+="gcc make autoconf automake libtool rpm-build kernel-rpm-macros "
 STANDARD_PACKAGES+="libblkid-devel libuuid-devel libudev-devel openssl-devel zlib-devel libaio-devel "
 STANDARD_PACKAGES+="libattr-devel elfutils-libelf-devel libffi-devel createrepo bison flex "
 STANDARD_PACKAGES+="git-core "
 # Extra RPM packages to install after standard packages are installed
-EXTRA_PACKAGES="python3 python3-setuptools python3-cffi python3-packaging "
-
+EXTRA_PACKAGES="python3 python3-setuptools python3-cffi python3-packaging python3-docutils python3-pyyaml python3-devel "
+# not present in AlmaLinux9 default repos, only in EPEL
+EXTRA_PACKAGES+="bindgen fuse-devel glibc-static libbabeltrace-devel libbpf-devel libmnl-devel libtraceevent-devel libtracefs-devel "
 if [ "$KRN_VENDOR" = "fedora" ]; then
-  # Build OpenZFS kmod for standard Fedora kernel  
+  # Build OpenZFS userspace packages and kernel for Fedora
   STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
   KERNEL_PKG_BASE_NAME=kernel
-  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.src.rpm
   # https://kojipkgs.fedoraproject.org/packages/kernel/6.12.6/100.fc40/src/kernel-6.12.6-100.fc40.src.rpm
+  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.src.rpm
   KERNEL_SRC_URL="https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_VERSION}/${KRN_RELEASE}.fc${OS_VERSION_MAJOR}/src/${KERNEL_SRC_PKG}"
+elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+  # Build OpenZFS userspace packages and kernel for AlmaLinux9
+  BASE_IMAGE_NAME=almalinux/${OS_VERSION_MAJOR}-base
+  IMAGE_NAME=zefosator-image-alma${OS_VERSION_MAJOR}
+  STANDARD_PACKAGES+="epel-release "
+  EXTRA_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
+  EXTRA_PACKAGES+="WALinuxAgent-cvm centos-sb-certs gcc-plugin-devel kabi-dw python3-sphinx python3-sphinx_rtd_theme system-sb-certs "
+  KERNEL_PKG_BASE_NAME=kernel
+  # https://repo.almalinux.org/vault/9.5/BaseOS/Source/Packages/kernel-5.14.0-503.16.1.el9_5.src.rpm
+  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.src.rpm
+  KERNEL_SRC_URL="https://repo.almalinux.org/vault/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/Source/Packages/${KERNEL_SRC_PKG}"
 fi
