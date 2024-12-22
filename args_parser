@@ -7,6 +7,10 @@ while (( "$#" )); do
     -h|--help)
       shift
       ;;
+    --version)
+      SHOW_VERSION=1
+      shift
+      ;;
     -b|--build)
       DO_BUILD=1
       shift
@@ -157,6 +161,11 @@ done
 # set positional arguments in their proper place
 eval set -- "$PARAMS"
 
+show_version() {
+  echo "Zefosator (c) Giedrius Masalskis"
+  echo "Version ${ZEFOSATOR_VERSION}"
+}
+
 show_help() {
   echo "Actions:"
   echo "  -b --build       Build matching collection of OpenZFS and kernel RPM packages."
@@ -164,7 +173,8 @@ show_help() {
   echo "                   directories and update their metadata."
   echo "  -i --install     Install specific version kernel and OpenZFS packages to current system."
   echo "                   Optionally create filesystem snapshot before installing."
-  echo "  -h --help        Show this information."
+  echo "  -h --help        Show usage information."
+  echo "     --version     Show version information."
   echo " "
   echo "Parameters:"
   echo "     --git-tag <branch/tag>"
