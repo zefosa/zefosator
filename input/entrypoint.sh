@@ -3,14 +3,20 @@
 set -e
 trap 'echo "Error occurred in the script at line ${LINENO}"' ERR
 
-echo "input dir: ${INPUT_DIR}"
-echo "output dir: ${OUTPUT_DIR}"
-echo "cache dir: ${CACHE_DIR}"
+cp /input/.rpmmacros /root/
 
 INPUT_DIR=${INPUT_DIR:=/input}
 OUTPUT_DIR=${OUTPUT_DIR:=/output}
 CACHE_DIR=${CACHE_DIR:=/cache}
 REPO_DIR=${REPO_DIR:=/repo}
+BUILD_DIR=${BUILD_DIR:=/build}
+
+echo "input dir: ${INPUT_DIR}"
+echo "output dir: ${OUTPUT_DIR}"
+echo "cache dir: ${CACHE_DIR}"
+echo "repo dir: ${REPO_DIR}"
+echo "build dir: ${BUILD_DIR}"
+echo "RPM source dir: $(rpm --eval "%{_sourcedir}")"
 
 source ${CACHE_DIR}/variables
 source ${INPUT_DIR}/library

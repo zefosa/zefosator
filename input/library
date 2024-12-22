@@ -95,7 +95,8 @@ function prepare_zfs_sources {
   fi
 
   echo "Configuring ZFS builtin build..."
-  ./configure --enable-linux-builtin --with-linux=$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/
+  ./configure --enable-linux-builtin --with-linux="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/"
+  ./copy-builtin "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/"
   popd
 }
 
@@ -114,7 +115,7 @@ function move_zfs_rpms {
   for f in ./*.rpm; do 
     # filter for NON kmod-*.rpm
     if [[ ! "$f" =~ kmod-.*\.rpm ]]; then 
-      cp -fv "$f" ${OUTPUT_DIR}/userspace/
+      cp -fv "$f" "${OUTPUT_DIR}/userspace/"
     fi
   done
   popd
@@ -126,7 +127,7 @@ function build_kernel_rpms {
   pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
   diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
     "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" \
-    > $(rpm --eval "%{_sourcedir}")/openzfs.patch
+    > "$(rpm --eval "%{_sourcedir}")/openzfs.patch" || true
   popd
   pushd "$(rpm --eval "%{_specdir}")"
   echo "Patching kernel RPM spec..."

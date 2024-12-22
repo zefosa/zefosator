@@ -41,8 +41,9 @@ function build_image {
 		RUN mkdir /input
 		RUN mkdir /cache
 		RUN mkdir /output
-		VOLUME [ "/input", "/cache", "/output", "/repo" ]
+		VOLUME [ "/input", "/cache", "/output", "/repo", "/build" ]
 		RUN dnf install -y ${STANDARD_PACKAGES}
+    RUN dnf install -y ${EXTRA_PACKAGES}
 		WORKDIR /input
 		ENTRYPOINT ["/input/entrypoint.sh"]
 		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
@@ -53,7 +54,7 @@ __EODF
 		RUN mkdir /input
 		RUN mkdir /cache
 		RUN mkdir /output
-		VOLUME [ "/input", "/cache", "/output", "/repo" ]
+		VOLUME [ "/input", "/cache", "/output", "/repo", "/build" ]
 		RUN dnf install -y ${STANDARD_PACKAGES}
 		RUN dnf install -y --enablerepo=epel --enablerepo=crb ${EXTRA_PACKAGES}
 		WORKDIR /input
@@ -66,7 +67,7 @@ __EODF
 		RUN mkdir /input
 		RUN mkdir /cache
 		RUN mkdir /output
-		VOLUME [ "/input", "/cache", "/output", "/repo" ]
+		VOLUME [ "/input", "/cache", "/output", "/repo", "/build" ]
 		RUN dnf install -y ${STANDARD_PACKAGES}
 		RUN dnf install -y --enablerepo=epel --enablerepo=powertools ${EXTRA_PACKAGES}
 		WORKDIR /input
@@ -85,10 +86,13 @@ function build_rpms_in_container {
   #rm -rf ./output
   mkdir -p ./output/kernel
   mkdir -p ./output/userspace
+# to mount /build for debugging purposes, replace --mount:
+#    --volume "./build:/build:Z"
   docker run --rm --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "./output:/output:Z" \
+    --mount type=tmpfs,destination=/build \
     "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 
@@ -100,6 +104,7 @@ function build_rpms_local {
   export INPUT_DIR=${PWD}/input
   export OUTPUT_DIR=${PWD}/output
   export CACHE_DIR=${PWD}/cache
+  export BUILD_DIR=${PWD}/build
   ./input/entrypoint.sh cleanup prepare zfs_rpms kernel_rpms
 }
 
