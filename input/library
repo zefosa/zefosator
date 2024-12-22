@@ -1,30 +1,54 @@
 #!/usr/bin/env bash
 
-function prepare_all {
-  echo $KRN_VENDOR
-  download_kernel_rpms
-
-  pushd /cache/kernel-rpms || return 1
-  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
-    pkgfile=${KERNEL_DEVEL_PKG##*/}
-    dnf install -y "${pkgfile}"
-  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
-    pkgfile1=${KERNEL_DEVEL_PKG##*/}
-    pkgfile2=${KERNEL_ABI_PKG##*/}
-    dnf install -y "./${pkgfile1}" "./${pkgfile2}"
-  elif [ "$KRN_VENDOR" = "almalinux8" ]; then
-    pkgfile1=${KERNEL_DEVEL_PKG##*/}
-    pkgfile2=${KERNEL_ABI_PKG##*/}
-    dnf install -y "./${pkgfile1}" "./${pkgfile2}"
-  fi
-  popd || return 1
-
-  mkdir -p /output/kernel
-  mkdir -p /output/userspace
+function create_dirs {
+  set -e
+  mkdir -p ${CACHE_DIR}/kernel-rpms
 }
 
-function build_zfs_rpms {
-  pushd /cache || return 1
+function download_kernel_sources {
+  set -e
+  echo "Downloading kernel source package..."
+  pushd ${CACHE_DIR}/kernel-rpms
+  if [ ! -f ${KERNEL_SRC_PKG} ]; then
+    echo "Downloading: ${KERNEL_SRC_PKG}"
+    if [ "$KRN_VENDOR" = "almalinux8" ]; then
+      curl --fail -LO "${KERNEL_SRC_URL}"
+    else
+      curl --fail --no-progress-meter -LO "${KERNEL_SRC_URL}"
+    fi
+  fi
+  popd
+}
+
+function prepare_kernel_sources {
+  set -e
+  echo "Initializing RPM build tree..."
+  /usr/bin/rpmdev-setuptree
+  rpm -Uvh "${CACHE_DIR}/kernel-rpms/${KERNEL_SRC_PKG}"
+  echo "CONFIG_ZFS=y" >> "$(rpm --eval "%{_sourcedir}")/kernel-local"
+  pushd "$(rpm --eval "%{_specdir}")"
+  # error if there is no buildid pattern to replace
+  grep "# define buildid .local" kernel.spec > /dev/null
+  sed -i "s/# define buildid .local/%define buildid .zfs/" kernel.spec
+  # extract + patch kernel sources
+  /usr/bin/rpmbuild -bp kernel.spec
+  popd
+
+  # ~/rpmbuild/BUILD/kernel-6.11.11/linux-6.11.11-200.zfs.fc40.x86_64/
+  pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
+  cp ./configs/kernel-${KRN_VERSION}-${KRN_ARCH}.config .config
+  make prepare
+  popd
+
+  # ~/rpmbuild/BUILD/kernel-6.11.11
+  pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
+  cp -r "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig"
+  popd
+}
+
+function prepare_zfs_sources {
+  set -e
+  pushd ${CACHE_DIR}
   if [ ! -d "${ZFS_GIT_TAG}" ]; then
     echo "Checking out ZFS sources..."
     if [ -z "${ZFS_GIT_CHERRY_PICK_COMMITS}" ]; then
@@ -32,17 +56,12 @@ function build_zfs_rpms {
     else 
       git clone --branch ${ZFS_GIT_TAG} ${ZFS_GITHUB_REPO} ${ZFS_GIT_TAG}
     fi
+  else
+    echo "ZFS source tree already in place."
   fi
+  popd
 
-  pushd "/cache/${ZFS_GIT_TAG}/rpm/generic" || return 1
-  if [ "${ENABLE_SPEC_PATCH}" -eq 1 ]; then
-    echo "Patching ZFS kmod RPM spec..."
-    patch < /input/patches/zfs-kmod-spec.patch
-  fi
-  popd || return 1
-
-  pushd "/cache/${ZFS_GIT_TAG}" || return 1
-
+  pushd "${CACHE_DIR}/${ZFS_GIT_TAG}"
   if [ -n "${ZFS_GIT_CHERRY_PICK_COMMITS}" ]; then
     echo "Cherry-picking additional commits..."
     git config user.email "zefosator@build.system"
@@ -56,7 +75,7 @@ function build_zfs_rpms {
   fi
 
   # easiest way to force ZFS use our version number for packages
-  rm -rf "/cache/${ZFS_GIT_TAG}/.git" || true
+  rm -rf "${CACHE_DIR}/${ZFS_GIT_TAG}/.git" || true
 
   if [ "${ENABLE_LICENSE_PATCH}" -eq 1 ]; then
     echo "Patching license..."
@@ -74,120 +93,84 @@ function build_zfs_rpms {
     echo "Launching autogen..."
     sh autogen.sh
   fi
-  
-  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
-    echo "Configuring ZFS kmod build..."
-    ./configure
-  elif [ "$KRN_VENDOR" = "almalinux9" ] || [ "$KRN_VENDOR" = "almalinux8" ]; then
-    echo "Configuring ZFS kABI-tracking kmod build..."
-    # https://openzfs.github.io/openzfs-docs/Developer%20Resources/Custom%20Packages.html
-    # kol kas kABI yra atjungtas ir mes kaip ir Fedora atveju buildinam paketus konkrečioms kernel versijoms
-    ./configure
-  fi
 
+  echo "Configuring ZFS builtin build..."
+  ./configure --enable-linux-builtin --with-linux=$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/
+  popd
+}
+
+function build_zfs_rpms {
+  set -e
   echo "Building ZFS RPM packages..."
-  make -s -j8 rpm-kmod rpm-utils
-
-  popd || return 1
-  popd || return 1
+  pushd "${CACHE_DIR}/${ZFS_GIT_TAG}"
+  make -s -j8 rpm-utils
+  popd
 }
 
 function move_zfs_rpms {
-  pushd "/cache/${ZFS_GIT_TAG}" || return 1
-
-  echo "Copying ZFS kmod packages to output dir..."
-  # i kernel paketu output direktorija perkeliam kmod paketus  
-  for f in ./*.rpm; do 
-    # filtruojam kmod-*.rpm
-    if [[ "$f" =~ kmod-.*  ]]; then 
-      cp -nv "$f" /output/kernel/
-    fi
-  done
-
+  set -e
   echo "Copying ZFS userspace packages to output dir..."
-  # i userspace paketu output direktorija perkeliam likusius paketus
+  pushd "${CACHE_DIR}/${ZFS_GIT_TAG}"
   for f in ./*.rpm; do 
-    # filtruojam NE kmod-*.rpm
-    if [[ ! "$f" =~ kmod-.*\.rpm  ]]; then 
-      cp -nv "$f" /output/userspace/
+    # filter for NON kmod-*.rpm
+    if [[ ! "$f" =~ kmod-.*\.rpm ]]; then 
+      cp -fv "$f" ${OUTPUT_DIR}/userspace/
     fi
   done
-
-  popd || return 1
+  popd
 }
 
-function download_kernel_rpms {
-  mkdir -p /cache/kernel-rpms
-  pushd /cache/kernel-rpms || return 1
-
-  echo "Downloading missing kernel packages..."
-  # parsisiunciam RPM paketus, jei nera
-  for i in "${KERNEL_PACKAGES[@]}"
-  do
-    pkgfile=${i##*/}
-    if [ ! -f "$pkgfile" ]; then
-      echo "Downloading: $pkgfile"
-      if [ "$KRN_VENDOR" = "almalinux8" ]; then
-        curl -LO "$i"
-      else
-        curl -v --no-progress-meter -LO "$i"
-      fi
-    fi
-  done
-
-  popd || return 1
+function build_kernel_rpms {
+  set -e
+  echo "Preparing to build kernel packages..."
+  pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
+  diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
+    "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" \
+    > $(rpm --eval "%{_sourcedir}")/openzfs.patch
+  popd
+  pushd "$(rpm --eval "%{_specdir}")"
+  echo "Patching kernel RPM spec..."
+  # Add "Patch1111: openzfs.patch" below "ApplyOptionalPatch linux-kernel-test.patch"
+  sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1111: openzfs.patch' kernel.spec
+  # Add "ApplyOptionalPatch openzfs.patch" below "ApplyOptionalPatch linux-kernel-test.patch"
+  sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch openzfs.patch' kernel.spec
+  # Add "Provides: zfs-kmod = 2.2.7\" below "Provides: kernel = %{specversion}-%{pkg_release}\"
+  sed -i "/Provides: kernel = %{specversion}-%{pkg_release}/a\Provides: zfs-kmod = ${ZFS_PKG_VERSION}\\\\" kernel.spec
+  echo "Building kernel packages..."
+  rpmbuild -bb --with baseonly --without debuginfo --target=${KRN_ARCH} kernel.spec
+  popd
 }
-
-function patch_kernel_meta_rpm {
-  pushd /cache/kernel-rpms || return 1
-  
-  pkgfile=${KERNEL_META_PKG##*/}
-  echo "Patching ${pkgfile} package requirements..."
-  # pridedam kmod-zfs requirement i kernel.rpm SPEC
-  # rezultatas yra modifikuotas RPM failas /cache/kernel-rpms/x86_64 direktorijoje
-  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
-    # Requires: kmod-zfs-6.8.10-200.fc39.x86_64
-    rpmrebuild --directory=/cache/kernel-rpms \
-      --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH} >= ${ZFS_PKG_VERSION}')" \
-      -p "/cache/kernel-rpms/${pkgfile}"
-  elif [ "$KRN_VENDOR" = "almalinux9" ] || [ "$KRN_VENDOR" = "almalinux8" ]; then    
-    # Requires: kmod-zfs-5.14.0-427.16.1.el9_4.x86_64
-    rpmrebuild --directory=/cache/kernel-rpms \
-      --change-spec-requires="cat - <(echo 'Requires: kmod-zfs-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH} >= ${ZFS_PKG_VERSION}')" \
-      -p "/cache/kernel-rpms/${pkgfile}"
-  fi
-
-  popd || return 1
-}
-
 
 function move_kernel_rpms {
+  set -e
   echo "Copying kernel packages to output dir..."
-  # padedam visus kernel paketus i savo repozitorija. kernel.rpm visada uzrasom, o likusius - praleidziam, jei jau yra.
-  for i in "${KERNEL_PACKAGES[@]}"
-  do
-    pkgfile=${i##*/}
-    cp -nv "/cache/kernel-rpms/$pkgfile" /output/kernel/
+  pushd "$(rpm --eval "%{_rpmdir}")/${KRN_ARCH}"
+  for f in ./*.rpm; do 
+    cp -fv "$f" ${OUTPUT_DIR}/kernel/
   done
-  pkgfile=${KERNEL_META_PKG##*/}
-  cp -fv "/cache/kernel-rpms/${KRN_ARCH}/${pkgfile}" /output/kernel/
+  popd
 }
 
 function cleanup_zfs {
+  set -e
   echo "Cleaning ZFS build dir..."
-  rm -rf "/cache/${ZFS_GIT_TAG}"
+  rm -rf "${CACHE_DIR}/${ZFS_GIT_TAG}"
 }
 
 function cleanup_kernel {
-  echo "Cleaning rebuilt kernel packages dir..."
-  rm -rf "/cache/kernel-rpms/${KRN_ARCH}"
+  set -e
+  echo "Cleaning kernel RPM build tree..."
+  rm -rf $(rpm --eval "%{_builddir}")/*
+  rm -rf $(rpm --eval "%{_sourcedir}")/*
+  rm -rf $(rpm --eval "%{_srcrpmdir}")/*
+  rm -rf $(rpm --eval "%{_specdir}")/*
+  find $(rpm --eval "%{_rpmdir}") -name "*.rpm" | xargs rm -f
 }
 
 function update_repo {
-  # regenerate repo metadata
-  mkdir -p /repo/repodata  
-  rm -f /repo/repodata/*
-  createrepo /repo
+  set -e
+  # clean and regenerate repository metadata
+  mkdir -p ${REPO_DIR}/repodata
+  rm -f ${REPO_DIR}/repodata/*
+  createrepo ${REPO_DIR}
 }
-
-

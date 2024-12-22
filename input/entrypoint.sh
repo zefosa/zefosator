@@ -1,19 +1,33 @@
 #!/usr/bin/env bash
 
 set -e
-source /cache/variables
-source /input/library
+trap 'echo "Error occurred in the script at line ${LINENO}"' ERR
+
+echo "input dir: ${INPUT_DIR}"
+echo "output dir: ${OUTPUT_DIR}"
+echo "cache dir: ${CACHE_DIR}"
+
+INPUT_DIR=${INPUT_DIR:=/input}
+OUTPUT_DIR=${OUTPUT_DIR:=/output}
+CACHE_DIR=${CACHE_DIR:=/cache}
+REPO_DIR=${REPO_DIR:=/repo}
+
+source ${CACHE_DIR}/variables
+source ${INPUT_DIR}/library
 
 for arg in "$@"
 do
-  if [ "$arg" == "prepare" ]; then    
-    prepare_all
+  if [ "$arg" == "prepare" ]; then
+    echo "Kernel vendor: ${KRN_VENDOR}"
+    create_dirs
+    download_kernel_sources
+    prepare_kernel_sources
+    prepare_zfs_sources
   elif [ "$arg" == "zfs_rpms" ]; then
     build_zfs_rpms
     move_zfs_rpms
   elif [ "$arg" == "kernel_rpms" ]; then
-    download_kernel_rpms
-    patch_kernel_meta_rpm
+    build_kernel_rpms
     move_kernel_rpms
   elif [ "$arg" == "cleanup" ]; then
     cleanup_zfs

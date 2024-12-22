@@ -30,96 +30,29 @@ BASE_IMAGE_NAME=${BASE_IMAGE_NAME:=fedora:${OS_VERSION_MAJOR}}
 IMAGE_NAME=${IMAGE_NAME:=zefosator-image-fedora${OS_VERSION_MAJOR}}
 # default kernel package base name
 KERNEL_PKG_BASE_NAME=${KERNEL_PKG_BASE_NAME:=kernel}
-# Standard RPM packages to install when building podman/docker image
-STANDARD_PACKAGES="gcc make autoconf automake libtool rpm-build kernel-rpm-macros "
+STANDARD_PACKAGES=""
+# RPM packages required to build kernel RPMs from source RPM
+STANDARD_PACKAGES+="asciidoc audit-libs-devel bindgen binutils-devel clang dracut dwarves "
+STANDARD_PACKAGES+="elfutils-devel fuse-devel gcc-c++ gettext glibc-static hmaccalc java-devel "
+STANDARD_PACKAGES+="kernel-rpm-macros libbabeltrace-devel libbpf-devel libcap-devel libcap-ng-devel "
+STANDARD_PACKAGES+="libmnl-devel libnl3-devel libtraceevent-devel libtracefs-devel lld llvm-devel "
+STANDARD_PACKAGES+="lvm2 ncurses-devel net-tools newt-devel nss-tools numactl-devel pciutils-devel "
+STANDARD_PACKAGES+="perl-devel perl-generators pesign python3-docutils python3-pyyaml rust rust-src "
+STANDARD_PACKAGES+="systemd-boot-unsigned systemd-ukify tpm2-tools xmlto xz-devel perl-ExtUtils-Embed "
+STANDARD_PACKAGES+="wget rpmdevtools bc hostname python3-devel rsync "
+# RPM packages required to build ZFS RPMs
+STANDARD_PACKAGES+="gcc make autoconf automake libtool rpm-build kernel-rpm-macros "
 STANDARD_PACKAGES+="libblkid-devel libuuid-devel libudev-devel openssl-devel zlib-devel libaio-devel "
 STANDARD_PACKAGES+="libattr-devel elfutils-libelf-devel libffi-devel createrepo bison flex "
 STANDARD_PACKAGES+="git-core "
 # Extra RPM packages to install after standard packages are installed
-EXTRA_PACKAGES="python3 python3-devel python3-setuptools python3-cffi python3-packaging "
+EXTRA_PACKAGES="python3 python3-setuptools python3-cffi python3-packaging "
 
 if [ "$KRN_VENDOR" = "fedora" ]; then
   # Build OpenZFS kmod for standard Fedora kernel  
   STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
   KERNEL_PKG_BASE_NAME=kernel
-  KERNEL_URL_DIR=https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_VERSION}/${KRN_RELEASE}.fc${OS_VERSION_MAJOR}/${KRN_ARCH}
-  KERNEL_META_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm
-  KERNEL_DEVEL_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm
-  KERNEL_PACKAGES=( \
-    "${KERNEL_META_PKG}" \
-    "${KERNEL_DEVEL_PKG}" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-core-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-matched-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-core-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-internal-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-  )
-elif [ "$KRN_VENDOR" = "kwizart" ]; then
-  # Build OpenZFS kmod for Kwizart LTS Fedora kernel
-  STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
-  ENABLE_SPEC_PATCH=1
-  KERNEL_PKG_BASE_NAME=kernel-longterm
-  # This is required part of URL to download kwizart kernel packages
-  KWIZART_BUILD_ID=${KWIZART_BUILD_ID:=undefined}  
-  # https://download.copr.fedorainfracloud.org/results/kwizart/kernel-longterm-6.6/fedora-39-x86_64/07383909-kernel-longterm/
-  KERNEL_URL_DIR=https://download.copr.fedorainfracloud.org/results/kwizart/kernel-longterm-${KRN_VERSION_MAJOR}.${KRN_VERSION_MINOR}/fedora-${OS_VERSION_MAJOR}-${KRN_ARCH}/${KWIZART_BUILD_ID}-kernel-longterm
-  # kernel-longterm-devel-6.6.29-200.fc39.x86_64.rpm
-  KERNEL_META_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm
-  KERNEL_DEVEL_PKG=${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm
-  KERNEL_PACKAGES=( \
-    "${KERNEL_META_PKG}" \
-    "${KERNEL_DEVEL_PKG}" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-core-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-devel-matched-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-core-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-    "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-internal-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
-  )
-elif [ "$KRN_VENDOR" = "almalinux9" ]; then
-  # Build OpenZFS kmod for standard AlmaLinux kernel
-  BASE_IMAGE_NAME=almalinux/${OS_VERSION_MAJOR}-base
-  IMAGE_NAME=zefosator-image-alma${OS_VERSION_MAJOR}
-  STANDARD_PACKAGES+="epel-release "
-  EXTRA_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
-  #               https://repo.almalinux.org/almalinux/9.3/BaseOS/x86_64/os/Packages/kernel-5.14.0-362.13.1.el9_3.x86_64.rpm
-  KERNEL_META_PKG=https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm
-  #              https://repo.almalinux.org/almalinux/9.3/BaseOS/x86_64/os/Packages/kernel-abi-stablelists-5.14.0-362.13.1.el9_3.noarch.rpm
-  #              https://raw.repo.almalinux.org/almalinux/9.4/BaseOS/x86_64/os/Packages/kernel-abi-stablelists-5.14.0-427.42.1.el9_4.noarch.rpm
-  KERNEL_ABI_PKG=https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-abi-stablelists-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.noarch.rpm
-  #                https://repo.almalinux.org/almalinux/9.3/AppStream/x86_64/os/Packages/kernel-devel-5.14.0-362.13.1.el9_3.x86_64.rpm
-  KERNEL_DEVEL_PKG=https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/AppStream/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-devel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm
-  KERNEL_PACKAGES=( \
-    "${KERNEL_META_PKG}" \
-    "${KERNEL_ABI_PKG}" \
-    "${KERNEL_DEVEL_PKG}" \
-    "https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/AppStream/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-devel-matched-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-    "https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/AppStream/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-headers-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-    "https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-core-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-    "https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-    "https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-core-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-    "https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-  )
-elif [ "$KRN_VENDOR" = "almalinux8" ]; then
-  # Build OpenZFS kmod for standard AlmaLinux kernel
-  BASE_IMAGE_NAME=almalinux/${OS_VERSION_MAJOR}-base
-  IMAGE_NAME=zefosator-image-alma${OS_VERSION_MAJOR}
-  STANDARD_PACKAGES+="epel-release "
-  EXTRA_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
-  #               https://repo.almalinux.org/almalinux/8.10/BaseOS/x86_64/os/Packages/kernel-4.18.0-553.22.1.el8_10.x86_64.rpm
-  KERNEL_META_PKG=https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm
-  #              https://repo.almalinux.org/almalinux/8.10/BaseOS/x86_64/os/Packages/kernel-4.18.0-553.22.1.el8_10.x86_64.rpm
-  KERNEL_ABI_PKG=https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-abi-stablelists-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.noarch.rpm
-  #                https://repo.almalinux.org/almalinux/8.10/BaseOS/x86_64/os/Packages/kernel-devel-4.18.0-553.22.1.el8_10.x86_64.rpm
-  KERNEL_DEVEL_PKG=https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-devel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm
-  KERNEL_PACKAGES=( \
-    "${KERNEL_META_PKG}" \
-    "${KERNEL_ABI_PKG}" \
-    "${KERNEL_DEVEL_PKG}" \
-    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-headers-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-core-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
-  )
+  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.src.rpm
+  # https://kojipkgs.fedoraproject.org/packages/kernel/6.12.6/100.fc40/src/kernel-6.12.6-100.fc40.src.rpm
+  KERNEL_SRC_URL="https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_VERSION}/${KRN_RELEASE}.fc${OS_VERSION_MAJOR}/src/${KERNEL_SRC_PKG}"
 fi
