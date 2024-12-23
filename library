@@ -92,10 +92,8 @@ function build_rpms_in_container {
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "./output:/output:Z" \
-    --volume "./build:/build:Z" \
-    "${IMAGE_NAME}" kernel_rpms
-    #--mount type=tmpfs,destination=/build
-    #"${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
+    --mount type=tmpfs,destination=/build \
+    "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 
 function build_rpms_local {
@@ -148,24 +146,53 @@ function copy_zfs_userspace_rpms_to_repos {
   set -e
   mkdir -p "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/"
   echo "Copying ZFS packages to repository..."
-  for f in ./output/userspace/*.rpm; do
-    # copy everything except kmod, debuginfo, debugsource ir .src.rpm
-    if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
-      cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
-    fi
-  done
+  if [ "$KRN_VENDOR" = "fedora" ]; then
+    for f in ./output/userspace/*.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
+      # copy everything except kmod, debuginfo, debugsource and .src.rpm
+      if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
+        cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+    for f in ./output/userspace/*.fc${OS_VERSION_MAJOR}.noarch.rpm; do
+      if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
+        cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    for f in ./output/userspace/*.el${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
+      # copy everything except kmod, debuginfo, debugsource and .src.rpm
+      if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
+        cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+    for f in ./output/userspace/*.el${OS_VERSION_MAJOR}.noarch.rpm; do
+      # copy everything except kmod, debuginfo, debugsource and .src.rpm
+      if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
+        cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+  fi
 }
 
 function copy_kernel_rpms_to_repos {
   set -e
   mkdir -p "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/"
   echo "Copying kernel packages to repository..."
-  for f in ./output/kernel/*.rpm; do
-    # copy everything except uki-virt
-    if [[ ! "$f" =~ .*uki-virt.* ]]; then
-      cp -fv "$f" "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/" || true
-    fi
-  done
+  if [ "$KRN_VENDOR" = "fedora" ]; then
+    for f in ./output/kernel/*.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
+      # copy everything except uki-virt
+      if [[ ! "$f" =~ .*uki-virt.* ]]; then
+        cp -fv "$f" "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    for f in ./output/kernel/*.el${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
+      # copy everything except uki-virt
+      if [[ ! "$f" =~ .*uki-virt.* ]]; then
+        cp -fv "$f" "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+  fi
 }
 
 function list_kernel_repo {

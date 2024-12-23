@@ -143,7 +143,7 @@ function move_zfs_rpms {
 
 function build_kernel_rpms {
   set -e
-  echo "Making openzfs.patch..."
+  echo "Preparing custom kernel patches..."
   if [ "$KRN_VENDOR" = "fedora" ]; then
     pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
     diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
@@ -155,24 +155,32 @@ function build_kernel_rpms {
     diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
       "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}" \
       > "$(rpm --eval "%{_sourcedir}")/openzfs.patch" || true
+      cp "${INPUT_DIR}/patches/linker-discard-eh_frame.patch" "$(rpm --eval "%{_sourcedir}")/"
     popd
   fi
   pushd "$(rpm --eval "%{_specdir}")"
   echo "Patching kernel RPM spec..."
-  if [ "$KRN_VENDOR" = "almalinux9" ]; then
-    # disable checks which cause this thing:
-    #   Found unset config items in arm64 aarch64-64k-debug, please set them to an appropriate value
-    #   CONFIG_ZFS=n
-    sed -i '/%bcond_with toolchain_clang/a\%define with_configchecks 0' kernel.spec
-  fi
+  # if [ "$KRN_VENDOR" = "almalinux9" ]; then
+  #   # disable checks which cause this thing:
+  #   #   Found unset config items in arm64 aarch64-64k-debug, please set them to an appropriate value
+  #   #   CONFIG_ZFS=n
+  #   sed -i '/%bcond_with toolchain_clang/a\%define with_configchecks 0' kernel.spec
+  #   sed -i '/%bcond_with toolchain_clang/a\%define configmismatch_fail 0' kernel.spec
+  #   sed -i '/%bcond_with toolchain_clang/a\%define listnewconfig_fail 0' kernel.spec
+  # fi
   # Add "Patch1111: openzfs.patch" below "ApplyOptionalPatch linux-kernel-test.patch"
-  sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1111: openzfs.patch' kernel.spec
+  sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1112: openzfs.patch' kernel.spec
+  sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1111: linker-discard-eh_frame.patch' kernel.spec
   # Add "ApplyOptionalPatch openzfs.patch" below "ApplyOptionalPatch linux-kernel-test.patch"
   sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch openzfs.patch' kernel.spec
+  sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch linker-discard-eh_frame.patch' kernel.spec
   # Add "Provides: zfs-kmod = 2.2.7\" below "Provides: kernel = %{specversion}-%{pkg_release}\"
   sed -i "/Provides: kernel = %{specversion}-%{pkg_release}/a\Provides: zfs-kmod = ${ZFS_PKG_VERSION}\\\\" kernel.spec
   echo "Building kernel packages..."
-  rpmbuild -bb --with baseonly --without debuginfo --target=${KRN_ARCH} kernel.spec
+  rpmbuild -bb  --without configchecks --without headers --without cross-headers \
+    --without kabichk --without doc --without selftests --with baseonly --without debuginfo \
+    --without kernel-abi-stablelists \
+    --target=${KRN_ARCH} kernel.spec
   popd
 }
 
