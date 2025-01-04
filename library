@@ -8,7 +8,7 @@ function create_variables_file {
 		KRN_VERSION_MINOR="${KRN_VERSION_MINOR}"
 		KRN_VERSION_PATCH="${KRN_VERSION_PATCH}"
 		KRN_RELEASE="${KRN_RELEASE}"
-		KRN_VENDOR="${KRN_VENDOR}"		
+		KRN_VENDOR="${KRN_VENDOR}"
 		KRN_ARCH="${KRN_ARCH}"
 		OS_VERSION="${OS_VERSION}"
 		OS_VERSION_MAJOR="${OS_VERSION_MAJOR}"
@@ -22,11 +22,9 @@ function create_variables_file {
 		ZFS_PKG_VERSION="${ZFS_PKG_VERSION}"
 		ENABLE_LICENSE_PATCH="${ENABLE_LICENSE_PATCH}"
 		ENABLE_SPEC_PATCH="${ENABLE_SPEC_PATCH}"
-		KERNEL_DEVEL_PKG="${KERNEL_DEVEL_PKG}"
-		KERNEL_META_PKG="${KERNEL_META_PKG}"
-		KERNEL_ABI_PKG="${KERNEL_ABI_PKG}"
-		KERNEL_PACKAGES=(${KERNEL_PACKAGES[*]})
+		KERNEL_SRC_PKG="${KERNEL_SRC_PKG}"
 		KERNEL_PKG_BASE_NAME="${KERNEL_PKG_BASE_NAME}"
+		KERNEL_SRC_URL="${KERNEL_SRC_URL}"
 __EOCNTVARS
   set -e
   echo "${CNTVARS}" > ./cache/variables
@@ -43,8 +41,9 @@ function build_image {
 		RUN mkdir /input
 		RUN mkdir /cache
 		RUN mkdir /output
-		VOLUME [ "/input", "/cache", "/output", "/repo" ]
+		VOLUME [ "/input", "/cache", "/output", "/repo", "/build" ]
 		RUN dnf install -y ${STANDARD_PACKAGES}
+    RUN dnf install -y ${EXTRA_PACKAGES}
 		WORKDIR /input
 		ENTRYPOINT ["/input/entrypoint.sh"]
 		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
@@ -55,7 +54,7 @@ __EODF
 		RUN mkdir /input
 		RUN mkdir /cache
 		RUN mkdir /output
-		VOLUME [ "/input", "/cache", "/output", "/repo" ]
+		VOLUME [ "/input", "/cache", "/output", "/repo", "/build" ]
 		RUN dnf install -y ${STANDARD_PACKAGES}
 		RUN dnf install -y --enablerepo=epel --enablerepo=crb ${EXTRA_PACKAGES}
 		WORKDIR /input
@@ -68,7 +67,7 @@ __EODF
 		RUN mkdir /input
 		RUN mkdir /cache
 		RUN mkdir /output
-		VOLUME [ "/input", "/cache", "/output", "/repo" ]
+		VOLUME [ "/input", "/cache", "/output", "/repo", "/build" ]
 		RUN dnf install -y ${STANDARD_PACKAGES}
 		RUN dnf install -y --enablerepo=epel --enablerepo=powertools ${EXTRA_PACKAGES}
 		WORKDIR /input
@@ -82,18 +81,35 @@ __EODF
   echo "${DF}" | podman build --tag "${IMAGE_NAME}" -f -
 }
 
-function make_all_rpms {
-  # output direktorija turi buti svari
-  rm -rf ./output
-  mkdir ./output
+function build_rpms_in_container {
+  set -e
+  #rm -rf ./output
+  mkdir -p ./output/kernel
+  mkdir -p ./output/userspace
+# to mount /build for debugging purposes, replace --mount:
+#    --volume "./build:/build:Z"
   docker run --rm --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "./output:/output:Z" \
+    --mount type=tmpfs,destination=/build \
     "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 
+function build_rpms_local {
+  set -e
+  #rm -rf ./output
+  mkdir -p ./output/kernel
+  mkdir -p ./output/userspace
+  export INPUT_DIR=${PWD}/input
+  export OUTPUT_DIR=${PWD}/output
+  export CACHE_DIR=${PWD}/cache
+  export BUILD_DIR=${PWD}/build
+  ./input/entrypoint.sh cleanup prepare zfs_rpms kernel_rpms
+}
+
 function update_kernel_repo {
+  set -e
   docker run --rm --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
@@ -101,7 +117,16 @@ function update_kernel_repo {
     "${IMAGE_NAME}" update_repo
 }
 
+function update_kernel_repo_local {
+  set -e
+  export INPUT_DIR=${PWD}/input
+  export CACHE_DIR=${PWD}/cache
+  export REPO_DIR=${KERNEL_REPO_DIR}/${KRN_ARCH}
+  ./input/entrypoint.sh update_repo
+}
+
 function update_userspace_repo {
+  set -e
   docker run --rm  --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
@@ -109,36 +134,65 @@ function update_userspace_repo {
     "${IMAGE_NAME}" update_repo
 }
 
-function copy_zfs_kmod_rpms_to_repos {
-  mkdir -p "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/"
-  # i repozitorijos direktorija kopijuojam aktualius paketus
-  for f in ./output/kernel/*.rpm; do 
-    # surandam visus kmod isskyrus devel ir debuginfo
-    if [[ "$f" =~ .*kmod.* && ! "$f" =~ .*devel.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then 
-      cp -nv "$f" "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/" || true
-    fi
-  done
+function update_userspace_repo_local {
+  set -e
+  export INPUT_DIR=${PWD}/input
+  export CACHE_DIR=${PWD}/cache
+  export REPO_DIR=${USERSPACE_REPO_DIR}/${KRN_ARCH}
+  ./input/entrypoint.sh update_repo
 }
 
 function copy_zfs_userspace_rpms_to_repos {
+  set -e
   mkdir -p "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/"
-  # i repozitorijos direktorija kopijuojam aktualius paketus
-  for f in ./output/userspace/*.rpm; do 
-    # surandam visus isskyrus kmod, debuginfo, debugsource ir .src.rpm
-    if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then  
-      cp -nv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
-    fi
-  done
+  echo "Copying ZFS packages to repository..."
+  if [ "$KRN_VENDOR" = "fedora" ]; then
+    for f in ./output/userspace/*.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
+      # copy everything except kmod, debuginfo, debugsource and .src.rpm
+      if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
+        cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+    for f in ./output/userspace/*.fc${OS_VERSION_MAJOR}.noarch.rpm; do
+      if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
+        cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    for f in ./output/userspace/*.el${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
+      # copy everything except kmod, debuginfo, debugsource and .src.rpm
+      if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
+        cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+    for f in ./output/userspace/*.el${OS_VERSION_MAJOR}.noarch.rpm; do
+      # copy everything except kmod, debuginfo, debugsource and .src.rpm
+      if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
+        cp -fv "$f" "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+  fi
 }
 
 function copy_kernel_rpms_to_repos {
+  set -e
   mkdir -p "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/"
-  # padedam visus kernel paketus i savo repozitorija
-  for i in "${KERNEL_PACKAGES[@]}"
-  do
-    pkgfile=${i##*/}
-    cp -nv "./output/kernel/$pkgfile" "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/" || true
-  done
+  echo "Copying kernel packages to repository..."
+  if [ "$KRN_VENDOR" = "fedora" ]; then
+    for f in ./output/kernel/*.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
+      # copy everything except uki-virt
+      if [[ ! "$f" =~ .*uki-virt.* ]]; then
+        cp -fv "$f" "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+  elif [ "$KRN_VENDOR" = "almalinux9" ]; then
+    for f in ./output/kernel/*.el${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
+      # copy everything except uki-virt
+      if [[ ! "$f" =~ .*uki-virt.* ]]; then
+        cp -fv "$f" "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/" || true
+      fi
+    done
+  fi
 }
 
 function list_kernel_repo {
@@ -152,21 +206,21 @@ function list_userspace_repo {
 }
 
 function zfs_snapshot {
+  set -e
   if [ -n "${SNAP_DATASET}" ]; then 
     zfs snap "${SNAP_DATASET}@before-update-$(date +%Y%m%d)" || true
   fi
 }
 
 function install_kernel_with_zfs {
-  dnf versionlock delete kernel kernel-core kernel-modules kernel-modules-extra kernel-longterm kernel-longterm-core kernel-longterm-modules kernel-longterm-modules-extra
-  sudo dnf install "${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "zfs-${ZFS_PKG_VERSION}" "python3-pyzfs-${ZFS_PKG_VERSION}" "zfs-dracut-${ZFS_PKG_VERSION}" "kmod-zfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
-  dnf versionlock add kernel kernel-core kernel-modules kernel-modules-extra kernel-longterm kernel-longterm-core kernel-longterm-modules kernel-longterm-modules-extra
+  set -e
+  sudo dnf install "${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "zfs-${ZFS_PKG_VERSION}" "python3-pyzfs-${ZFS_PKG_VERSION}" "zfs-dracut-${ZFS_PKG_VERSION}"
 }
 
 function list_initramfs_zfs {
-  # initramfs vizualus patikrinimas
-  echo "ZFS related files in /boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img:"
-  lsinitrd "/boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img" | grep zfs
+  # initramfs visual inspection
+  echo "ZFS related files in /boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img:"
+  lsinitrd "/boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img" | grep "/zfs"
 }
 
 function list_versionlock {
@@ -179,8 +233,9 @@ function print_kernel_changelog {
   rpm -ql --changelog "${KERNEL_PKG_BASE_NAME}-core-${KRN_VERSION}" | head -n 20  
 }
 
-function update_initramfs {  
-  sudo dracut "/boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img" "${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" --force
+function update_initramfs {
+  set -e
+  dracut "/boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img" "${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" --force
 }
 
 function list_installed_kernels {

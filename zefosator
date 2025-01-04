@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export ZEFOSATOR_VERSION=2.0.0
+
 set -e
 source ./args_parser
 
@@ -7,7 +9,9 @@ if [ -n "${PARAMS_FILE}" ]; then
   source "${PARAMS_FILE}"
 fi
 
-if [ -n "${DO_BUILD}" ] && \
+if [ -n "${SHOW_VERSION}" ]; then
+  show_version
+elif [ -n "${DO_BUILD}" ] && \
     [ -n "${ZFS_GIT_TAG}" ] && [ -n "${ZFS_PKG_VERSION}" ] && [ -n "${ZFS_PKG_RELEASE}" ] && \
     [ -n "${KRN_VERSION}" ] && [ -n "${KRN_RELEASE}" ] && [ -n "${OS_VERSION}" ]; then
   if [ "$(id -u)" -eq 0 ]
@@ -18,7 +22,8 @@ if [ -n "${DO_BUILD}" ] && \
   source ./library
   create_variables_file
   build_image
-  make_all_rpms
+  build_rpms_in_container
+  #build_rpms_local
 elif [ -n "${DO_PUBLISH}" ] && \
     [ -n "${KERNEL_REPO_DIR}" ] && [ -n "${USERSPACE_REPO_DIR}" ] && \
     [ -n "${ZFS_PKG_VERSION}" ] && [ -n "${ZFS_PKG_RELEASE}" ] && \
@@ -33,9 +38,10 @@ elif [ -n "${DO_PUBLISH}" ] && \
   build_image
   copy_zfs_userspace_rpms_to_repos
   update_userspace_repo
-  copy_zfs_kmod_rpms_to_repos
+  #update_userspace_repo_local
   copy_kernel_rpms_to_repos
   update_kernel_repo
+  #update_kernel_repo_local
   list_kernel_repo
   list_userspace_repo
 elif [ -n "${DO_INSTALL}" ] && \

@@ -1,0 +1,11 @@
+diff '--color=auto' -uNrp linux-5.14.0-503.16.1.zfs.el9.x86_64.orig/include/asm-generic/vmlinux.lds.h linux-5.14.0-503.16.1.zfs.el9.x86_64/include/asm-generic/vmlinux.lds.h
+--- linux-5.14.0-503.16.1.zfs.el9.x86_64.orig/include/asm-generic/vmlinux.lds.h	2024-12-23 09:01:29.532629778 +0200
++++ linux-5.14.0-503.16.1.zfs.el9.x86_64/include/asm-generic/vmlinux.lds.h	2024-12-23 09:03:06.420975500 +0200
+@@ -995,6 +995,7 @@
+ 	*(.modinfo)							\
+ 	/* ld.bfd warns about .gnu.version* even when not emitted */	\
+ 	*(.gnu.version*)						\
++	*(.eh_frame)
+ 
+ #define DISCARDS							\
+ 	/DISCARD/ : {							\

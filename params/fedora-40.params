@@ -1,14 +1,11 @@
 OS_VERSION=40
 KRN_VENDOR=fedora
-KRN_VERSION=6.11.4
-KRN_RELEASE=200
+KRN_VERSION=6.12.8
+KRN_RELEASE=100
 KRN_ARCH=x86_64
-ZFS_GIT_TAG=zfs-2.2.6
-#                           TODO: merge conflict
-#                          |https://github.com/openzfs/zfs/issues/16501|
-ZFS_GIT_CHERRY_PICK_COMMITS=6f50f8e16b7c4a3f1925b41e3d47b479cd7b2d9f
-ZFS_PKG_VERSION=2.2.6
-ZFS_PKG_RELEASE=101
+ZFS_GIT_TAG=zfs-2.2.7
+ZFS_PKG_VERSION=2.2.7
+ZFS_PKG_RELEASE=100
 KERNEL_REPO_DIR=/home/giedriusm/Repo/zfs/40/kernel
 USERSPACE_REPO_DIR=/home/giedriusm/Repo/zfs/40/user
 SNAP_DATASET=gmp1/fedora/40
