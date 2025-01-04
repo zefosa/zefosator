@@ -93,7 +93,7 @@ function build_rpms_in_container {
     --volume "./cache:/cache:Z" \
     --volume "./output:/output:Z" \
     --mount type=tmpfs,destination=/build \
-    "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
+    "localhost/${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 
 function build_rpms_local {
