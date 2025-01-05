@@ -25,12 +25,19 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: zefosator currently requires podman
-        run: sudo apt -y install podman
+      - name: Build ZFS userspace and kernel packages for Fedora 40
+        run: ./zefosator --build --params-file params/fedora-40.params
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Building ZFS userspace and kernel packages for Fedora 40
-          ./zefosator --build --params-file params/fedora-40.params
+      # - name: Upload ZFS kernel packages artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: fedora40-zfs-kernel-packages
+      #     path: output/kernel/
+      #     compression-level: 0 # no compression
+
+      - name: Upload ZFS userspace packages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora40-zfs-userspace-packages
+          path: output/userspace/
+          compression-level: 0 # no compression

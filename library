@@ -91,12 +91,13 @@ function build_rpms_in_container {
 # to speed up builds mount build as tmpfs:
 #    --mount type=tmpfs,destination=/build
 # to enable caching of downloaded artifacts:
- #   --volume "./cache:/cache:Z" \
+#    --volume "./cache:/cache:Z" \
    podman run --rm --sig-proxy --interactive \
     --security-opt seccomp=unconfined \
     --volume "./input:/input:Z" \
     --volume "./output:/output:Z" \
-    "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
+    "${IMAGE_NAME}" cleanup prepare zfs_rpms
+#    "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 
 function build_rpms_local {
