@@ -31,8 +31,8 @@ __EOCNTVARS
 }
 
 function build_image {
-  # Dockerfile turinys paduodamas is kintamojo DF per STDIN
-  # dockerfile sugeneruojamas i kintamaji DF
+  # Dockerfile contents are generated into variable DF.
+  # Dockerfile contents are passed from variable DF via STDIN.
   set +e
 
   if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
@@ -88,12 +88,12 @@ function build_rpms_in_container {
   mkdir -p ./output/userspace
 # to mount /build for debugging purposes, replace --mount:
 #    --volume "./build:/build:Z"
-  docker run --rm --sig-proxy --interactive \
+  podman run --rm --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "./output:/output:Z" \
     --mount type=tmpfs,destination=/build \
-    "localhost/${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
+    "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 
 function build_rpms_local {
@@ -110,7 +110,7 @@ function build_rpms_local {
 
 function update_kernel_repo {
   set -e
-  docker run --rm --sig-proxy --interactive \
+  podman run --rm --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "${KERNEL_REPO_DIR}/${KRN_ARCH}:/repo:Z" \
@@ -127,7 +127,7 @@ function update_kernel_repo_local {
 
 function update_userspace_repo {
   set -e
-  docker run --rm  --sig-proxy --interactive \
+  podman run --rm  --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "${USERSPACE_REPO_DIR}/${KRN_ARCH}:/repo:Z" \

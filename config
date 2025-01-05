@@ -24,9 +24,9 @@ ZFS_GITHUB_REPO=${ZFS_GITHUB_REPO:=https://github.com/openzfs/zfs.git}
 ENABLE_LICENSE_PATCH=${ENABLE_LICENSE_PATCH:=0}
 # 1 = drop BuildRequires line from RPM SPEC in case kernel-devel package has different name
 ENABLE_SPEC_PATCH=${ENABLE_SPEC_PATCH:=0}
-# docker/podman base image
+# podman base image
 BASE_IMAGE_NAME=${BASE_IMAGE_NAME:=fedora:${OS_VERSION_MAJOR}}
-# podman/docker built image
+# podman built image
 IMAGE_NAME=${IMAGE_NAME:=zefosator-image-fedora${OS_VERSION_MAJOR}}
 # default kernel package base name
 KERNEL_PKG_BASE_NAME=${KERNEL_PKG_BASE_NAME:=kernel}
