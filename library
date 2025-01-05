@@ -96,8 +96,7 @@ function build_rpms_in_container {
     --security-opt seccomp=unconfined \
     --volume "./input:/input:Z" \
     --volume "./output:/output:Z" \
-    "${IMAGE_NAME}" cleanup prepare zfs_rpms
-#    "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
+    "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 
 function build_rpms_local {

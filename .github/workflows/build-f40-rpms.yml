@@ -25,19 +25,30 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      - name: Build ZFS userspace and kernel packages for Fedora 40
+      - name: Build ZFS built-in kernel for Fedora 40
         run: ./zefosator --build --params-file params/fedora-40.params
 
-      # - name: Upload ZFS kernel packages artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: fedora40-zfs-kernel-packages
-      #     path: output/kernel/
-      #     compression-level: 0 # no compression
+      - name: Remove unnecessary userspace packages
+        run: |
+          rm -f output/userspace/*.src.rpm
+          rm -f output/userspace/*debug*.rpm
+          rm -f output/userspace/*test*.rpm
+          rm -f output/userspace/*kmod*.rpm
 
       - name: Upload ZFS userspace packages artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fedora40-zfs-userspace-packages
+          name: fedora40-zfs-userspace-packages.zip
           path: output/userspace/
+          compression-level: 0 # no compression
+
+      - name: Remove unnecessary kernel packages
+        run: |
+          rm -f output/userspace/*uki-virt*.rpm
+
+      - name: Upload ZFS kernel packages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora40-zfs-kernel-packages.zip
+          path: output/kernel/
           compression-level: 0 # no compression
