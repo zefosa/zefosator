@@ -27,7 +27,7 @@ function create_variables_file {
 		KERNEL_SRC_URL="${KERNEL_SRC_URL}"
 __EOCNTVARS
   set -e
-  echo "${CNTVARS}" > ./cache/variables
+  echo "${CNTVARS}" > ./input/variables
 }
 
 function build_image {
@@ -88,11 +88,13 @@ function build_rpms_in_container {
   mkdir -p ./output/userspace
 # to mount /build for debugging purposes, replace --mount:
 #    --volume "./build:/build:Z"
-  podman run --rm --sig-proxy --interactive \
+# to speed up builds mount build as tmpfs:
+#    --mount type=tmpfs,destination=/build
+# to enable caching of downloaded artifacts:
+ #   --volume "./cache:/cache:Z" \
+   podman run --rm --sig-proxy --interactive \
     --volume "./input:/input:Z" \
-    --volume "./cache:/cache:Z" \
     --volume "./output:/output:Z" \
-    --mount type=tmpfs,destination=/build \
     "${IMAGE_NAME}" cleanup prepare zfs_rpms kernel_rpms
 }
 

@@ -18,7 +18,7 @@ echo "repo dir: ${REPO_DIR}"
 echo "build dir: ${BUILD_DIR}"
 echo "RPM source dir: $(rpm --eval "%{_sourcedir}")"
 
-source ${CACHE_DIR}/variables
+source ${INPUT_DIR}/variables
 source ${INPUT_DIR}/library
 
 for arg in "$@"
