@@ -78,7 +78,7 @@ __EODF
 
   set -e
   podman pull "${BASE_IMAGE_NAME}"
-  echo "${DF}" | podman build --tag "${IMAGE_NAME}" -f -
+  echo "${DF}" | podman build --layers --tag "${IMAGE_NAME}" -f -
 }
 
 function build_rpms_in_container {

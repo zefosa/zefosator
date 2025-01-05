@@ -25,6 +25,13 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
+      - uses: actions/cache@v4
+        name: Podman cache restore
+        with:
+          key: ${{ runner.os }}-podman
+          path: |
+            ~/.local/share/containers/storage
+
       - name: Build ZFS built-in kernel for Fedora 40
         run: ./zefosator --build --params-file params/fedora-40.params
 
