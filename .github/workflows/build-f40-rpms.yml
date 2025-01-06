@@ -51,7 +51,7 @@ jobs:
 
       - name: Remove unnecessary kernel packages
         run: |
-          rm -f output/userspace/*uki-virt*.rpm
+          rm -f output/kernel/*uki-virt*.rpm
 
       - name: Upload ZFS kernel packages artifact
         uses: actions/upload-artifact@v4
