@@ -130,7 +130,7 @@ function download_kernel_rpms {
       if [ "$KRN_VENDOR" = "almalinux8" ]; then
         curl -LO "$i"
       else
-        curl -v --no-progress-meter -LO "$i"
+        curl --no-progress-meter -LO "$i"
       fi
     fi
   done
