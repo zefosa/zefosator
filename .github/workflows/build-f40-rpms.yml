@@ -5,10 +5,10 @@ name: Build Fedora 40 Packages
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  # push:
+  #   branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -25,12 +25,12 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      - uses: actions/cache@v4
-        name: Podman cache restore
-        with:
-          key: ${{ runner.os }}-podman
-          path: |
-            ~/.local/share/containers/storage
+      # - uses: actions/cache@v4
+      #   name: Podman cache restore
+      #   with:
+      #     key: ${{ runner.os }}-podman
+      #     path: |
+      #       ~/.local/share/containers/storage
 
       - name: Build ZFS built-in kernel for Fedora 40
         run: ./zefosator --build --params-file params/fedora-40.params
