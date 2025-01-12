@@ -45,7 +45,7 @@ jobs:
       - name: Upload ZFS userspace packages artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fedora40-zfs-userspace-packages.zip
+          name: fedora40-zfs-userspace-packages
           path: output/userspace/
           compression-level: 0 # no compression
 
@@ -56,6 +56,6 @@ jobs:
       - name: Upload ZFS kernel packages artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fedora40-zfs-kernel-packages.zip
+          name: fedora40-zfs-kernel-packages
           path: output/kernel/
           compression-level: 0 # no compression
