@@ -16,9 +16,33 @@ function download_kernel_sources {
     else
       curl --fail --no-progress-meter -LO "${KERNEL_SRC_URL}"
     fi
+    if [ "$KRN_VENDOR" = "zefosa" ]; then
+      echo "Downloading: ${KERNEL_TARBALL_URL}"
+      curl --fail --no-progress-meter -LO "${KERNEL_TARBALL_URL}"
+    fi
   fi
   popd
 }
+
+#!/bin/bash
+
+# List of kernel config files
+aarch64_config_files=(
+    "kernel-aarch64-16k-debug-fedora.config"
+    "kernel-aarch64-16k-fedora.config"
+    "kernel-aarch64-64k-debug-rhel.config"
+    "kernel-aarch64-64k-rhel.config"
+    "kernel-aarch64-automotive-debug-rhel.config"
+    "kernel-aarch64-automotive-rhel.config"
+    "kernel-aarch64-debug-fedora.config"
+    "kernel-aarch64-debug-rhel.config"
+    "kernel-aarch64-fedora.config"
+    "kernel-aarch64-rhel.config"
+    "kernel-aarch64-rt-debug-fedora.config"
+    "kernel-aarch64-rt-debug-rhel.config"
+    "kernel-aarch64-rt-fedora.config"
+    "kernel-aarch64-rt-rhel.config"
+)
 
 function prepare_kernel_sources {
   set -e
@@ -30,11 +54,39 @@ function prepare_kernel_sources {
   # error if there is no buildid pattern to replace
   grep "# define buildid .local" kernel.spec > /dev/null
   sed -i "s/# define buildid .local/%define buildid .zfs/" kernel.spec
+  # Append changelog entry
+  "${INPUT_DIR}/append-changelog.py" kernel.spec Zefosa zefosa@fogas.net "${KRN_VERSION}-${KRN_RELEASE}" "ZFS ${ZFS_PKG_VERSION} built-in (Giedrius M.)"
+  if [ "$KRN_VENDOR" = "zefosa" ]; then
+    pushd "$(rpm --eval "%{_sourcedir}")"
+    # parameter added between 6.12.15 and 6.12.22
+    config_param="CONFIG_MIPI_I3C_HCI_PCI=m"
+    # Iterate through files and append the config parameter
+    for file in "${aarch64_config_files[@]}"; do
+        if [ -f "$file" ]; then
+            echo "Adding $config_param to $file"
+            echo "$config_param" >> "$file"
+        else
+            echo "Warning: File $file not found"
+        fi
+    done
+    # Replace linux-6.12.15.tar.xz from src.rpm with latest linux-6.12.22.tar.xz
+    rm -f "linux-${KRN_SRCRPM_VERSION}.tar.xz"
+    mv "${CACHE_DIR}/kernel-rpms/${KERNEL_TARBALL}" .
+    # rename to match final version number
+    mv "kernel-abi-stablelists-${KRN_SRCRPM_VERSION}.tar.xz" "kernel-abi-stablelists-${KRN_VERSION}.tar.xz"
+    mv "kernel-kabi-dw-${KRN_SRCRPM_VERSION}.tar.xz" "kernel-kabi-dw-${KRN_VERSION}.tar.xz"
+    popd
+    # back in SPEC dir now, patch correct version
+    sed -i "s/%define specrpmversion ${KRN_SRCRPM_VERSION}/%define specrpmversion ${KRN_VERSION}/" kernel.spec
+    sed -i "s/%define specversion ${KRN_SRCRPM_VERSION}/%define specversion ${KRN_VERSION}/" kernel.spec
+    sed -i "s/%define tarfile_release ${KRN_SRCRPM_VERSION}/%define tarfile_release ${KRN_VERSION}/" kernel.spec
+    sed -i "s/%define kabiversion ${KRN_SRCRPM_VERSION}/%define kabiversion ${KRN_VERSION}/" kernel.spec
+  fi
   # extract + patch kernel sources
   /usr/bin/rpmbuild -bp kernel.spec
   popd
 
-  if [ "$KRN_VENDOR" = "fedora" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
     # ~/rpmbuild/BUILD/kernel-6.11.11/linux-6.11.11-200.zfs.fc40.x86_64/
     pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
     cp ./configs/kernel-${KRN_VERSION}-${KRN_ARCH}.config .config
@@ -48,7 +100,7 @@ function prepare_kernel_sources {
     popd
   fi
 
-  if [ "$KRN_VENDOR" = "fedora" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
     # ~/rpmbuild/BUILD/kernel-6.11.11
     pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
     cp -r "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig"
@@ -110,7 +162,7 @@ function prepare_zfs_sources {
   fi
 
   echo "Configuring ZFS built-in build..."
-  if [ "$KRN_VENDOR" = "fedora" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
     ./configure --enable-linux-builtin --with-linux="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/"
     ./copy-builtin "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}/"
   elif [ "$KRN_VENDOR" = "almalinux9" ]; then
@@ -144,7 +196,9 @@ function move_zfs_rpms {
 function build_kernel_rpms {
   set -e
   echo "Preparing custom kernel patches..."
-  if [ "$KRN_VENDOR" = "fedora" ]; then
+  cp "${INPUT_DIR}/patches/linker-discard-eh_frame.patch" "$(rpm --eval "%{_sourcedir}")/"
+  cp "${INPUT_DIR}/patches/insn_decoder_test.patch" "$(rpm --eval "%{_sourcedir}")/"
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
     pushd "$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}"
     diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
       "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" \
@@ -155,17 +209,16 @@ function build_kernel_rpms {
     diff -uNrp "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}.orig" \
       "linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}" \
       > "$(rpm --eval "%{_sourcedir}")/openzfs.patch" || true
-      cp "${INPUT_DIR}/patches/linker-discard-eh_frame.patch" "$(rpm --eval "%{_sourcedir}")/"
     popd
   fi
   pushd "$(rpm --eval "%{_specdir}")"
   echo "Patching kernel RPM spec..."
+  sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1113: insn_decoder_test.patch' kernel.spec
+  sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch insn_decoder_test.patch' kernel.spec
   sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1112: openzfs.patch' kernel.spec
   sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch openzfs.patch' kernel.spec
-  if [ "$KRN_VENDOR" = "almalinux9" ]; then
-    sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1111: linker-discard-eh_frame.patch' kernel.spec
-    sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch linker-discard-eh_frame.patch' kernel.spec
-  fi
+  sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1111: linker-discard-eh_frame.patch' kernel.spec
+  sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch linker-discard-eh_frame.patch' kernel.spec
   # Add "Provides: zfs-kmod = 2.2.7\" below "Provides: kernel = %{specversion}-%{pkg_release}\"
   sed -i "/Provides: kernel = %{specversion}-%{pkg_release}/a\Provides: zfs-kmod = ${ZFS_PKG_VERSION}\\\\" kernel.spec
   echo "Building kernel packages..."

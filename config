@@ -56,6 +56,16 @@ if [ "$KRN_VENDOR" = "fedora" ]; then
   # https://kojipkgs.fedoraproject.org/packages/kernel/6.12.6/100.fc40/src/kernel-6.12.6-100.fc40.src.rpm
   KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.src.rpm
   KERNEL_SRC_URL="https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_VERSION}/${KRN_RELEASE}.fc${OS_VERSION_MAJOR}/src/${KERNEL_SRC_PKG}"
+elif [ "$KRN_VENDOR" = "zefosa" ]; then
+  # Build OpenZFS userspace packages and kernel for Fedora using specific kernel source tarball version from kernel.org
+  STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
+  KERNEL_PKG_BASE_NAME=kernel
+  # https://kojipkgs.fedoraproject.org/packages/kernel/6.12.15/100.fc40/src/kernel-6.12.15-100.fc40.src.rpm
+  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_SRCRPM_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.src.rpm
+  KERNEL_SRC_URL="https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_SRCRPM_VERSION}/${KRN_RELEASE}.fc${OS_VERSION_MAJOR}/src/${KERNEL_SRC_PKG}"
+  # https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.22.tar.xz
+  KERNEL_TARBALL="linux-${KRN_VERSION}.tar.xz"
+  KERNEL_TARBALL_URL="https://cdn.kernel.org/pub/linux/kernel/v${KRN_VERSION_MAJOR}.x/${KERNEL_TARBALL}"
 elif [ "$KRN_VENDOR" = "almalinux9" ]; then
   # Build OpenZFS userspace packages and kernel for AlmaLinux9
   BASE_IMAGE_NAME=almalinux/${OS_VERSION_MAJOR}-base

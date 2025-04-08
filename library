@@ -4,6 +4,7 @@ function create_variables_file {
   set +e
   read -r -d '' CNTVARS <<- __EOCNTVARS
 		KRN_VERSION="${KRN_VERSION}"
+    KRN_SRCRPM_VERSION="${KRN_SRCRPM_VERSION}"
 		KRN_VERSION_MAJOR="${KRN_VERSION_MAJOR}"
 		KRN_VERSION_MINOR="${KRN_VERSION_MINOR}"
 		KRN_VERSION_PATCH="${KRN_VERSION_PATCH}"
@@ -25,6 +26,8 @@ function create_variables_file {
 		KERNEL_SRC_PKG="${KERNEL_SRC_PKG}"
 		KERNEL_PKG_BASE_NAME="${KERNEL_PKG_BASE_NAME}"
 		KERNEL_SRC_URL="${KERNEL_SRC_URL}"
+		KERNEL_TARBALL="${KERNEL_TARBALL}"
+		KERNEL_TARBALL_URL="${KERNEL_TARBALL_URL}"
 __EOCNTVARS
   set -e
   echo "${CNTVARS}" > ./input/variables
@@ -35,7 +38,7 @@ function build_image {
   # Dockerfile contents are passed from variable DF via STDIN.
   set +e
 
-  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
     read -r -d '' DF <<- __EODF
 		FROM ${BASE_IMAGE_NAME} as base
 		RUN mkdir /input
@@ -57,19 +60,6 @@ __EODF
 		VOLUME [ "/input", "/cache", "/output", "/repo", "/build" ]
 		RUN dnf install -y ${STANDARD_PACKAGES}
 		RUN dnf install -y --enablerepo=epel --enablerepo=crb ${EXTRA_PACKAGES}
-		WORKDIR /input
-		ENTRYPOINT ["/input/entrypoint.sh"]
-		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
-__EODF
-  elif [ "$KRN_VENDOR" = "almalinux8" ]; then
-    read -r -d '' DF <<- __EODF
-		FROM ${BASE_IMAGE_NAME} as base
-		RUN mkdir /input
-		RUN mkdir /cache
-		RUN mkdir /output
-		VOLUME [ "/input", "/cache", "/output", "/repo", "/build" ]
-		RUN dnf install -y ${STANDARD_PACKAGES}
-		RUN dnf install -y --enablerepo=epel --enablerepo=powertools ${EXTRA_PACKAGES}
 		WORKDIR /input
 		ENTRYPOINT ["/input/entrypoint.sh"]
 		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
@@ -149,7 +139,7 @@ function copy_zfs_userspace_rpms_to_repos {
   set -e
   mkdir -p "${USERSPACE_REPO_DIR}/${KRN_ARCH}/Packages/"
   echo "Copying ZFS packages to repository..."
-  if [ "$KRN_VENDOR" = "fedora" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
     for f in ./output/userspace/*.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
       # copy everything except kmod, debuginfo, debugsource and .src.rpm
       if [[ ! "$f" =~ .*kmod.* && ! "$f" =~ .*test.* && ! "$f" =~ .*debug.* && ! "$f" =~ .*\.src\.rpm ]]; then
@@ -181,7 +171,7 @@ function copy_kernel_rpms_to_repos {
   set -e
   mkdir -p "${KERNEL_REPO_DIR}/${KRN_ARCH}/Packages/"
   echo "Copying kernel packages to repository..."
-  if [ "$KRN_VENDOR" = "fedora" ]; then
+  if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
     for f in ./output/kernel/*.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm; do
       # copy everything except uki-virt
       if [[ ! "$f" =~ .*uki-virt.* ]]; then

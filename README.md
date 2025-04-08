@@ -19,9 +19,9 @@ Building with custom parameters, e.g. OpenZFS 2.2.4 for Fedora 40 kernel 6.8.9-3
 ./zefosator --build --os-version 40 --krn-version 6.8.9 --krn-release 300 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
 ```
 
-Building OpenZFS 2.2.4 for Fedora 39 kwizart LTS kernel 6.6.29-200:
+Building OpenZFS 2.2.7 for Fedora 40 using linux-6.12.22.tar.xz from kernel.org as kernel source based on Fedora's kernel-6.12.15-100.fc40.src.rpm:
 ```
-./zefosator --build --krn-vendor kwizart --os-version 39 --krn-version 6.6.29 --krn-release 200 --kwizart-build-id 07383909 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
+./zefosator --build --krn-vendor zefosa --os-version 40 --krn-version 6.12.15 --krn-tarball-version 6.12.22 --krn-release 100 --git-tag zfs-2.2.7 --pkg-version 2.2.7 --pkg-release 1
 ```
 
 Building OpenZFS 2.2.4 for AlmaLinux 9.4 kernel 5.14.0-362.24.1:
