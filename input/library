@@ -213,8 +213,11 @@ function build_kernel_rpms {
   fi
   pushd "$(rpm --eval "%{_specdir}")"
   echo "Patching kernel RPM spec..."
-  sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1113: insn_decoder_test.patch' kernel.spec
-  sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch insn_decoder_test.patch' kernel.spec
+  # only kernels earlier than 6.13 require this patch
+  if [ "${KRN_VERSION_MAJOR}" -lt "6" ] || [ "${KRN_VERSION_MAJOR}" -eq "6" ] && [ "${KRN_VERSION_MINOR}" -lt "13" ]; then
+    sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1113: insn_decoder_test.patch' kernel.spec
+    sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch insn_decoder_test.patch' kernel.spec
+  fi
   sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1112: openzfs.patch' kernel.spec
   sed -i '/ApplyOptionalPatch linux-kernel-test.patch/a\ApplyOptionalPatch openzfs.patch' kernel.spec
   sed -i '/Patch999999: linux-kernel-test.patch/a\Patch1111: linker-discard-eh_frame.patch' kernel.spec

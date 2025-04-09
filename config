@@ -44,7 +44,7 @@ STANDARD_PACKAGES+="wget rpmdevtools bc hostname rsync "
 STANDARD_PACKAGES+="gcc make autoconf automake libtool rpm-build kernel-rpm-macros "
 STANDARD_PACKAGES+="libblkid-devel libuuid-devel libudev-devel openssl-devel zlib-devel libaio-devel "
 STANDARD_PACKAGES+="libattr-devel elfutils-libelf-devel libffi-devel createrepo bison flex "
-STANDARD_PACKAGES+="git-core "
+STANDARD_PACKAGES+="git-core rustfmt "
 # Extra RPM packages to install after standard packages are installed
 EXTRA_PACKAGES="python3 python3-setuptools python3-cffi python3-packaging python3-docutils python3-pyyaml python3-devel "
 # not present in AlmaLinux9 default repos, only in EPEL
