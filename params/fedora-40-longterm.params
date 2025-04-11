@@ -1,7 +1,7 @@
 OS_VERSION=40
 KRN_VENDOR=zefosa
 # kernel.org source tarball version
-KRN_VERSION=6.12.22
+KRN_VERSION=6.12.23
 # Fedora SRC RPM version used as base
 KRN_SRCRPM_VERSION=6.12.15
 KRN_RELEASE=100
