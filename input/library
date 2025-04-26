@@ -45,11 +45,11 @@ function download_kernel_sources {
     if [ "$KRN_VENDOR" = "almalinux8" ]; then
       curl --fail -LO "${KERNEL_SRC_URL}"
     else
-      curl --fail --no-progress-meter -LO "${KERNEL_SRC_URL}"
+      curl --fail -LO "${KERNEL_SRC_URL}"
     fi
     if [ "$KRN_VENDOR" = "zefosa" ]; then
       echo "Downloading: ${KERNEL_TARBALL_URL}"
-      curl --fail --no-progress-meter -LO "${KERNEL_TARBALL_URL}"
+      curl --fail -LO "${KERNEL_TARBALL_URL}"
     fi
   fi
   popd
@@ -73,12 +73,21 @@ function prepare_kernel_sources {
     config_param="CONFIG_MIPI_I3C_HCI_PCI=m"
     # Iterate through files and append the config parameter
     for file in "${aarch64_config_files[@]}"; do
-        if [ -f "$file" ]; then
-            echo "Adding $config_param to $file"
-            echo "$config_param" >> "$file"
-        else
-            echo "Warning: File $file not found"
-        fi
+      if [ -f "$file" ]; then
+          echo "Adding $config_param to $file"
+          echo "$config_param" >> "$file"
+      else
+          echo "Warning: File $file not found"
+      fi
+    done
+    # parameter added between 6.12.23 and 6.12.25
+    config_param="CONFIG_HID_UNIVERSAL_PIDFF=m"
+    # Iterate through all config files and append the config parameter
+    for file in *.config; do
+      if [[ -f "$file" ]]; then
+        echo "Adding $config_param to $file"
+        echo "$config_param" >> "$file"
+      fi
     done
     # Replace linux-6.12.15.tar.xz from src.rpm with latest linux-6.12.22.tar.xz
     rm -f "linux-${KRN_SRCRPM_VERSION}.tar.xz"
