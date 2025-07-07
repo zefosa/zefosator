@@ -51,7 +51,7 @@ EXTRA_PACKAGES="python3 python3-setuptools python3-cffi python3-packaging python
 EXTRA_PACKAGES+="bindgen fuse-devel glibc-static libbabeltrace-devel libbpf-devel libmnl-devel libtraceevent-devel libtracefs-devel "
 if [ "$KRN_VENDOR" = "fedora" ]; then
   # Build OpenZFS userspace packages and kernel for Fedora
-  STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
+  STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress bpftool clippy "
   EXTRA_PACKAGES+="python3-wheel python3-jsonschema "
   KERNEL_PKG_BASE_NAME=kernel
   # https://kojipkgs.fedoraproject.org/packages/kernel/6.12.6/100.fc40/src/kernel-6.12.6-100.fc40.src.rpm
