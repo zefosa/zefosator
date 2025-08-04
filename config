@@ -25,7 +25,7 @@ ENABLE_LICENSE_PATCH=${ENABLE_LICENSE_PATCH:=0}
 # 1 = drop BuildRequires line from RPM SPEC in case kernel-devel package has different name
 ENABLE_SPEC_PATCH=${ENABLE_SPEC_PATCH:=0}
 # podman base image
-BASE_IMAGE_NAME=${BASE_IMAGE_NAME:=fedora:${OS_VERSION_MAJOR}}
+BASE_IMAGE_NAME=${BASE_IMAGE_NAME:=docker.io/library/fedora:${OS_VERSION_MAJOR}}
 # podman built image
 IMAGE_NAME=${IMAGE_NAME:=zefosator-image-fedora${OS_VERSION_MAJOR}}
 # default kernel package base name
@@ -69,7 +69,7 @@ elif [ "$KRN_VENDOR" = "zefosa" ]; then
   KERNEL_TARBALL_URL="https://cdn.kernel.org/pub/linux/kernel/v${KRN_VERSION_MAJOR}.x/${KERNEL_TARBALL}"
 elif [ "$KRN_VENDOR" = "almalinux9" ]; then
   # Build OpenZFS userspace packages and kernel for AlmaLinux9
-  BASE_IMAGE_NAME=almalinux/${OS_VERSION_MAJOR}-base
+  BASE_IMAGE_NAME=docker.io/library/almalinux:${OS_VERSION_MAJOR}
   IMAGE_NAME=zefosator-image-alma${OS_VERSION_MAJOR}
   STANDARD_PACKAGES+="epel-release "
   EXTRA_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
