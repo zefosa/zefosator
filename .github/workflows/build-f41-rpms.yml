@@ -13,6 +13,10 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  PKG_ID: fedora41
+  PARAMS_FILE: params/fedora-41.params
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -25,37 +29,32 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      # - uses: actions/cache@v4
-      #   name: Podman cache restore
-      #   with:
-      #     key: ${{ runner.os }}-podman
-      #     path: |
-      #       ~/.local/share/containers/storage
+      - name: Build ZFS built-in kernel and userspace packages
+        run: ./zefosator --build --params-file $PARAMS_FILE
 
-      - name: Build ZFS built-in kernel for Fedora 41
-        run: ./zefosator --build --params-file params/fedora-41.params
-
-      - name: Remove unnecessary userspace packages
+      - name: Upload selected userspace packages
+        env:
+          ARTIFACT_UPLOAD_KEY: ${{ secrets.ARTIFACT_UPLOAD_KEY }}
         run: |
-          rm -f output/userspace/*.src.rpm
-          rm -f output/userspace/*debug*.rpm
-          rm -f output/userspace/*test*.rpm
-          rm -f output/userspace/*kmod*.rpm
+          pushd ./output/userspace/
+          rm -f *.src.rpm
+          rm -f *debug*.rpm
+          rm -f *test*.rpm
+          rm -f *kmod*.rpm
+          tar -cf "$PKG_ID-zfs-userspace-packages.tar" *.rpm
+          sha256sum "$PKG_ID-zfs-userspace-packages.tar" > "$PKG_ID-zfs-userspace-packages.sha256"
+          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$PKG_ID-zfs-userspace-packages.tar" "https://cloud.fogas.net/public.php/webdav/$PKG_ID-zfs-userspace-packages.tar"
+          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$PKG_ID-zfs-userspace-packages.sha256" "https://cloud.fogas.net/public.php/webdav/$PKG_ID-zfs-userspace-packages.sha256"
+          popd
 
-      - name: Upload ZFS userspace packages artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fedora41-zfs-userspace-packages
-          path: output/userspace/
-          compression-level: 0 # no compression
-
-      - name: Remove unnecessary kernel packages
+      - name: Upload selected kernel packages
+        env:
+          ARTIFACT_UPLOAD_KEY: ${{ secrets.ARTIFACT_UPLOAD_KEY }}
         run: |
-          rm -f output/kernel/*uki-virt*.rpm
-
-      - name: Upload ZFS kernel packages artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fedora41-zfs-kernel-packages
-          path: output/kernel/
-          compression-level: 0 # no compression
+          pushd ./output/kernel/
+          rm -f *uki-virt*.rpm
+          tar -cf "$PKG_ID-zfs-kernel-packages.tar" *.rpm
+          sha256sum "$PKG_ID-zfs-kernel-packages.tar" > "$PKG_ID-zfs-kernel-packages.sha256"
+          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$PKG_ID-zfs-kernel-packages.tar" "https://cloud.fogas.net/public.php/webdav/$PKG_ID-zfs-kernel-packages.tar"
+          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$PKG_ID-zfs-kernel-packages.sha256" "https://cloud.fogas.net/public.php/webdav/$PKG_ID-zfs-kernel-packages.sha256"
+          popd
