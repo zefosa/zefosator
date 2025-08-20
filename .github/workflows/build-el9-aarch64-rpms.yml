@@ -54,6 +54,8 @@ jobs:
         run: |
           pushd ./output/kernel/
           rm -f *uki-virt*.rpm
+          rm -f kernel-64k-*.rpm
+          rm -f kernel-rt-64k-*.rpm
           tar -cf "$KERNEL_ARCHIVE" *.rpm
           sha256sum "$KERNEL_ARCHIVE" > "$KERNEL_CHECKSUM"
           curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$KERNEL_ARCHIVE" "https://cloud.fogas.net/public.php/webdav/$KERNEL_ARCHIVE"
