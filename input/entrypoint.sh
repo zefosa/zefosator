@@ -8,13 +8,11 @@ cp /input/.rpmmacros /root/
 INPUT_DIR=${INPUT_DIR:=/input}
 OUTPUT_DIR=${OUTPUT_DIR:=/output}
 CACHE_DIR=${CACHE_DIR:=/cache}
-REPO_DIR=${REPO_DIR:=/repo}
 BUILD_DIR=${BUILD_DIR:=/build}
 
 echo "input dir: ${INPUT_DIR}"
 echo "output dir: ${OUTPUT_DIR}"
 echo "cache dir: ${CACHE_DIR}"
-echo "repo dir: ${REPO_DIR}"
 echo "build dir: ${BUILD_DIR}"
 echo "RPM source dir: $(rpm --eval "%{_sourcedir}")"
 
@@ -38,7 +36,5 @@ do
   elif [ "$arg" == "cleanup" ]; then
     cleanup_zfs
     cleanup_kernel
-  elif [ "$arg" == "update_repo" ]; then
-    update_repo
   fi
 done

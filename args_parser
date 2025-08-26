@@ -15,14 +15,6 @@ while (( "$#" )); do
       DO_BUILD=1
       shift
       ;;
-    -p|--publish)
-      DO_PUBLISH=1
-      shift
-      ;;
-    -i|--install)
-      DO_INSTALL=1
-      shift
-      ;;
     --initramfs)
       DO_INITRAMFS=1
       shift
@@ -108,33 +100,6 @@ while (( "$#" )); do
         exit 1
       fi
       ;;
-    --kernel-repo-dir)
-      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-        KERNEL_REPO_DIR=$2
-        shift 2
-      else
-        echo "Error: Argument for $1 is missing" >&2
-        exit 1
-      fi
-      ;;
-    --userspace-repo-dir)
-      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-        USERSPACE_REPO_DIR=$2
-        shift 2
-      else
-        echo "Error: Argument for $1 is missing" >&2
-        exit 1
-      fi
-      ;;
-    --snapshot-dataset)
-      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-        SNAP_DATASET=$2
-        shift 2
-      else
-        echo "Error: Argument for $1 is missing" >&2
-        exit 1
-      fi
-      ;;
     --patch-license)
       ENABLE_LICENSE_PATCH=1
       shift
@@ -160,10 +125,6 @@ show_version() {
 show_help() {
   echo "Actions:"
   echo "  -b --build       Build matching collection of OpenZFS and kernel RPM packages."
-  echo "  -p --publish     Copy built packages to userspace and kernel RPM repository"
-  echo "                   directories and update their metadata."
-  echo "  -i --install     Install specific version kernel and OpenZFS packages to current system."
-  echo "                   Optionally create filesystem snapshot before installing."
   echo "  -h --help        Show usage information."
   echo "     --version     Show version information."
   echo " "
@@ -192,12 +153,6 @@ show_help() {
   echo "     --krn-vendor <kernel_vendor>"
   echo "                   Optional. Kernel vendor name, allowed values:"
   echo "                   fedora (default), zefosa, almalinux9"
-  echo "     --kernel-repo-dir <directory_path>"
-  echo "                   Copy kernel packages and update repository metadata in this directory."
-  echo "     --userspace-repo-dir <directory_path>"
-  echo "                   Copy userspace packages and update repository metadata in this directory."
-  echo "     --snapshot-dataset <zfs_dataset>"
-  echo "                   Create snapshot of this dataset before installing packages."
   echo "     --patch-license"
   echo "                   Set if you don't want 'tainted' kernel messages on your systems."
   echo "     --params-file <file_name>"

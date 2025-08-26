@@ -2,11 +2,12 @@
 
 # directory of unpacked linux source tarball inside rpm build tree
 if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
-  # fedora 41
-  if [ "$OS_VERSION" -eq "41" ]; then
-  # /build/BUILD/kernel-6.13.11-build/kernel-6.13.11/linux-6.13.11-200.zfs.fc41.x86_64
-  LINUX_SRC_DIR="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-build/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
-  else  # fedora 40
+  # kernels >6.12, i.e. 6.13+
+  if [ "$KRN_VERSION_MAJOR" -gt 6 ] || { [ "$KRN_VERSION_MAJOR" -eq 6 ] && [ "$KRN_VERSION_MINOR" -gt 12 ]; }; then
+    # /build/BUILD/kernel-6.13.11-build/kernel-6.13.11/linux-6.13.11-200.zfs.fc41.x86_64
+    LINUX_SRC_DIR="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-build/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
+  else
+    # /build/BUILD/kernel-6.12.15/linux-6.12.15-100.zfs.fc40.x86_64
     LINUX_SRC_DIR="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
   fi
 else # almalinux 9
@@ -254,12 +255,4 @@ function cleanup_kernel {
   rm -rf $(rpm --eval "%{_srcrpmdir}")/*
   rm -rf $(rpm --eval "%{_specdir}")/*
   find $(rpm --eval "%{_rpmdir}") -name "*.rpm" | xargs rm -f
-}
-
-function update_repo {
-  set -e
-  # clean and regenerate repository metadata
-  mkdir -p ${REPO_DIR}/repodata
-  rm -f ${REPO_DIR}/repodata/*
-  createrepo ${REPO_DIR}
 }
