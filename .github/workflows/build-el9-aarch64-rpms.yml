@@ -36,6 +36,7 @@ jobs:
           USERSPACE_CHECKSUM: ${{ env.PKG_ID }}-${{ env.PKG_ARCH }}-zfs-userspace-packages.sha256
         run: |
           pushd ./output/userspace/
+          ls -lh
           rm -f *.src.rpm
           rm -f *debug*.rpm
           rm -f *test*.rpm
@@ -53,6 +54,7 @@ jobs:
           KERNEL_CHECKSUM: ${{ env.PKG_ID }}-${{ env.PKG_ARCH }}-zfs-kernel-packages.sha256
         run: |
           pushd ./output/kernel/
+          ls -lh
           rm -f *uki-virt*.rpm
           rm -f kernel-64k-*.rpm
           rm -f kernel-rt-64k-*.rpm
