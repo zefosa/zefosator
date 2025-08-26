@@ -7,6 +7,3 @@ KRN_ARCH=x86_64
 ZFS_GIT_TAG=zfs-2.3.4
 ZFS_PKG_VERSION=2.3.4
 ZFS_PKG_RELEASE=100
-KERNEL_REPO_DIR=/home/giedriusm/Repo/zfs/41/kernel
-USERSPACE_REPO_DIR=/home/giedriusm/Repo/zfs/41/user
-SNAP_DATASET=gmp1/fedora/41
