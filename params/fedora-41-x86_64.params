@@ -1,7 +1,7 @@
 OS_VERSION=41
 KRN_VENDOR=fedora
 # https://bodhi.fedoraproject.org/updates/?search=&packages=kernel&releases=F41
-KRN_VERSION=6.16.10
+KRN_VERSION=6.16.11
 KRN_RELEASE=100
 KRN_ARCH=x86_64
 ZFS_GIT_TAG=zfs-2.3.4
