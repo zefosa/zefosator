@@ -1,9 +1,9 @@
-# https://repo.almalinux.org/vault/9.5/BaseOS/Source/Packages/kernel-5.14.0-503.16.1.el9_5.src.rpm
+# https://vault.almalinux.org/9.7/BaseOS/Source/Packages/kernel-5.14.0-611.5.1.el9_7.src.rpm
 KRN_VENDOR=almalinux9
 KRN_ARCH=aarch64
-OS_VERSION=9.6
+OS_VERSION=9.7
 KRN_VERSION=5.14.0
-KRN_RELEASE=570.33.2
-ZFS_GIT_TAG=zfs-2.3.3
-ZFS_PKG_VERSION=2.3.3
+KRN_RELEASE=611.5.1
+ZFS_GIT_TAG=zfs-2.3.5
+ZFS_PKG_VERSION=2.3.5
 ZFS_PKG_RELEASE=1
