@@ -1,5 +1,5 @@
 
-name: Build Fedora 41 packages for AMD64 arch
+name: Build Fedora 43 packages for AMD64 arch
 
 # Controls when the workflow will run
 on:
@@ -7,14 +7,14 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'params/fedora-41-x86_64.params'
+      - 'params/fedora-43-x86_64.params'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 env:
-  PKG_ID: fedora41
+  PKG_ID: fedora43
   PKG_ARCH: x86_64
-  PARAMS_FILE: params/fedora-41-x86_64.params
+  PARAMS_FILE: params/fedora-43-x86_64.params
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
