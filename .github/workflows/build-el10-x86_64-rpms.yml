@@ -44,8 +44,8 @@ jobs:
           rm -f *test*.rpm
           tar -cf "$USERSPACE_ARCHIVE" *.rpm
           sha256sum "$USERSPACE_ARCHIVE" > "$USERSPACE_CHECKSUM"
-          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$USERSPACE_ARCHIVE" "https://cloud.fogas.net/public.php/webdav/$USERSPACE_ARCHIVE"
-          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$USERSPACE_CHECKSUM" "https://cloud.fogas.net/public.php/webdav/$USERSPACE_CHECKSUM"
+          curl --retry 3 -u "$ARTIFACT_UPLOAD_KEY:" -T "$USERSPACE_ARCHIVE" "https://cloud.fogas.net/public.php/webdav/$USERSPACE_ARCHIVE"
+          curl --retry 3 -u "$ARTIFACT_UPLOAD_KEY:" -T "$USERSPACE_CHECKSUM" "https://cloud.fogas.net/public.php/webdav/$USERSPACE_CHECKSUM"
           popd
 
       - name: Upload selected kernel packages
@@ -60,6 +60,6 @@ jobs:
           rm -f *debug*.rpm
           tar -cf "$KERNEL_ARCHIVE" *.rpm
           sha256sum "$KERNEL_ARCHIVE" > "$KERNEL_CHECKSUM"
-          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$KERNEL_ARCHIVE" "https://cloud.fogas.net/public.php/webdav/$KERNEL_ARCHIVE"
-          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$KERNEL_CHECKSUM" "https://cloud.fogas.net/public.php/webdav/$KERNEL_CHECKSUM"
+          curl --retry 3 -u "$ARTIFACT_UPLOAD_KEY:" -T "$KERNEL_ARCHIVE" "https://cloud.fogas.net/public.php/webdav/$KERNEL_ARCHIVE"
+          curl --retry 3 -u "$ARTIFACT_UPLOAD_KEY:" -T "$KERNEL_CHECKSUM" "https://cloud.fogas.net/public.php/webdav/$KERNEL_CHECKSUM"
           popd
