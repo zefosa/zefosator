@@ -82,7 +82,7 @@ function build_zfs_rpms {
   if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "kwizart" ]; then
     echo "Configuring ZFS kmod build..."
     ./configure
-  elif [ "$KRN_VENDOR" = "almalinux10" ] || [ "$KRN_VENDOR" = "almalinux8" ] || [ "$KRN_VENDOR" = "almalinux8" ] ; then
+  elif [ "$KRN_VENDOR" = "almalinux10" ] || [ "$KRN_VENDOR" = "almalinux9" ] || [ "$KRN_VENDOR" = "almalinux8" ] ; then
     echo "Configuring ZFS kABI-tracking kmod build..."
     # https://openzfs.github.io/openzfs-docs/Developer%20Resources/Custom%20Packages.html
     # kol kas kABI yra atjungtas ir mes kaip ir Fedora atveju buildinam paketus konkrečioms kernel versijoms
