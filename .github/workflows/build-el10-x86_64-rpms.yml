@@ -28,7 +28,7 @@ jobs:
         with:
           ref: 'v1'
 
-      - name: Build ZFS built-in kernel and userspace packages
+      - name: Build ZFS kernel and userspace packages
         run: ./zefosator --build --params-file $PARAMS_FILE
 
       - name: Upload selected userspace packages
