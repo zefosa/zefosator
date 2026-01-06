@@ -99,7 +99,7 @@ function make_all_rpms {
   # output direktorija turi buti svari
   rm -rf ./output
   mkdir ./output
-  docker run --rm --sig-proxy --interactive \
+  podman run --rm --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "./output:/output:Z" \
@@ -107,7 +107,7 @@ function make_all_rpms {
 }
 
 function update_kernel_repo {
-  docker run --rm --sig-proxy --interactive \
+  podman run --rm --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "${KERNEL_REPO_DIR}/${KRN_ARCH}:/repo:Z" \
@@ -115,7 +115,7 @@ function update_kernel_repo {
 }
 
 function update_userspace_repo {
-  docker run --rm  --sig-proxy --interactive \
+  podman run --rm  --sig-proxy --interactive \
     --volume "./input:/input:Z" \
     --volume "./cache:/cache:Z" \
     --volume "${USERSPACE_REPO_DIR}/${KRN_ARCH}:/repo:Z" \

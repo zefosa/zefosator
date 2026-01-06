@@ -24,13 +24,13 @@ ZFS_GITHUB_REPO=${ZFS_GITHUB_REPO:=https://github.com/openzfs/zfs.git}
 ENABLE_LICENSE_PATCH=${ENABLE_LICENSE_PATCH:=0}
 # 1 = drop BuildRequires line from RPM SPEC in case kernel-devel package has different name
 ENABLE_SPEC_PATCH=${ENABLE_SPEC_PATCH:=0}
-# docker/podman base image
+# podman base image
 BASE_IMAGE_NAME=${BASE_IMAGE_NAME:=fedora:${OS_VERSION_MAJOR}}
-# podman/docker built image
+# podman built image
 IMAGE_NAME=${IMAGE_NAME:=zefosator-image-fedora${OS_VERSION_MAJOR}}
 # default kernel package base name
 KERNEL_PKG_BASE_NAME=${KERNEL_PKG_BASE_NAME:=kernel}
-# Standard RPM packages to install when building podman/docker image
+# Standard RPM packages to install when building podman image
 STANDARD_PACKAGES="gcc make autoconf automake libtool rpm-build kernel-rpm-macros "
 STANDARD_PACKAGES+="libblkid-devel libuuid-devel libudev-devel openssl-devel zlib-devel libaio-devel "
 STANDARD_PACKAGES+="libattr-devel elfutils-libelf-devel libffi-devel createrepo bison flex "
@@ -80,7 +80,7 @@ elif [ "$KRN_VENDOR" = "kwizart" ]; then
 elif [ "$KRN_VENDOR" = "almalinux10" ]; then
   # Build OpenZFS kmod for standard AlmaLinux kernel
   BASE_IMAGE_NAME=almalinux/${OS_VERSION_MAJOR}-base
-  IMAGE_NAME=localhost/zefosator-image-alma${OS_VERSION_MAJOR}
+  IMAGE_NAME=zefosator-image-alma${OS_VERSION_MAJOR}
   STANDARD_PACKAGES+="epel-release "
   EXTRA_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
   #              https://repo.almalinux.org/almalinux/10.1/BaseOS/x86_64/os/Packages/kernel-6.12.0-124.21.1.el10_1.x86_64.rpm
