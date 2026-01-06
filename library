@@ -49,6 +49,19 @@ function build_image {
 		ENTRYPOINT ["/input/entrypoint.sh"]
 		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
 __EODF
+  elif [ "$KRN_VENDOR" = "almalinux10" ]; then
+    read -r -d '' DF <<- __EODF
+		FROM ${BASE_IMAGE_NAME} as base
+		RUN mkdir /input
+		RUN mkdir /cache
+		RUN mkdir /output
+		VOLUME [ "/input", "/cache", "/output", "/repo" ]
+		RUN dnf install -y ${STANDARD_PACKAGES}
+		RUN dnf install -y --enablerepo=epel --enablerepo=crb ${EXTRA_PACKAGES}
+		WORKDIR /input
+		ENTRYPOINT ["/input/entrypoint.sh"]
+		CMD ["prepare", "zfs_rpms", "kernel_rpms", "cleanup"]
+__EODF
   elif [ "$KRN_VENDOR" = "almalinux9" ]; then
     read -r -d '' DF <<- __EODF
 		FROM ${BASE_IMAGE_NAME} as base

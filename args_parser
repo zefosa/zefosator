@@ -187,7 +187,7 @@ show_help() {
   echo "                   Only x86_64 is currently supported and set by default."
   echo "     --krn-vendor <kernel_vendor>"
   echo "                   Optional. Kernel vendor name, allowed values:"
-  echo "                   fedora (default), kwizart, almalinux8, almalinux9"
+  echo "                   fedora (default), kwizart, almalinux8, almalinux9, almalinux10"
   echo "     --kwizart-build-id <number>"
   echo "                   Required part of URL to download kwizart kernel packages, e.g."
   echo "                   07383909, 07321133, ..."

@@ -77,6 +77,29 @@ elif [ "$KRN_VENDOR" = "kwizart" ]; then
     "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
     "${KERNEL_URL_DIR}/${KERNEL_PKG_BASE_NAME}-modules-internal-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.rpm" \
   )
+elif [ "$KRN_VENDOR" = "almalinux10" ]; then
+  # Build OpenZFS kmod for standard AlmaLinux kernel
+  BASE_IMAGE_NAME=almalinux/${OS_VERSION_MAJOR}-base
+  IMAGE_NAME=zefosator-image-alma${OS_VERSION_MAJOR}
+  STANDARD_PACKAGES+="epel-release "
+  EXTRA_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
+  #              https://repo.almalinux.org/almalinux/10.1/BaseOS/x86_64/os/Packages/kernel-6.12.0-124.21.1.el10_1.x86_64.rpm
+  KERNEL_META_PKG=https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm
+  #              https://repo.almalinux.org/almalinux/10.1/BaseOS/x86_64/os/Packages/kernel-abi-stablelists-6.12.0-124.21.1.el10_1.noarch.rpm
+  KERNEL_ABI_PKG=https://raw.repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-abi-stablelists-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.noarch.rpm
+  #              https://repo.almalinux.org/almalinux/10.1/AppStream/x86_64/os/Packages/kernel-devel-6.12.0-124.21.1.el10_1.x86_64.rpm
+  KERNEL_DEVEL_PKG=https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/AppStream/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-devel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm
+  KERNEL_PACKAGES=( \
+    "${KERNEL_META_PKG}" \
+    "${KERNEL_ABI_PKG}" \
+    "${KERNEL_DEVEL_PKG}" \
+    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/AppStream/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-devel-matched-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
+    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/AppStream/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-headers-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
+    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-core-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
+    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
+    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-core-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
+    "https://repo.almalinux.org/almalinux/${OS_VERSION_MAJOR}.${OS_VERSION_MINOR}/BaseOS/${KRN_ARCH}/os/Packages/${KERNEL_PKG_BASE_NAME}-modules-extra-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}.${KRN_ARCH}.rpm" \
+  )
 elif [ "$KRN_VENDOR" = "almalinux9" ]; then
   # Build OpenZFS kmod for standard AlmaLinux kernel
   BASE_IMAGE_NAME=almalinux/${OS_VERSION_MAJOR}-base

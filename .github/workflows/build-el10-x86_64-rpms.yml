@@ -1,0 +1,63 @@
+name: Build AlmaLinux 10 Packages for AMD64
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events for the "main" branch and specific params file
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'params/almalinux-10-x86_64.params'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  PKG_ID: almalinux10
+  PKG_ARCH: x86_64
+  PARAMS_FILE: params/almalinux-10-x86_64.params
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      - name: Build ZFS built-in kernel and userspace packages
+        run: ./zefosator --build --params-file $PARAMS_FILE
+
+      - name: Upload selected userspace packages
+        env:
+          ARTIFACT_UPLOAD_KEY: ${{ secrets.ARTIFACT_UPLOAD_KEY }}
+          USERSPACE_ARCHIVE: ${{ env.PKG_ID }}-${{ env.PKG_ARCH }}-zfs-userspace-packages.tar
+          USERSPACE_CHECKSUM: ${{ env.PKG_ID }}-${{ env.PKG_ARCH }}-zfs-userspace-packages.sha256
+        run: |
+          pushd ./output/userspace/
+          ls -lh
+          rm -f *.src.rpm
+          rm -f *debug*.rpm
+          rm -f *test*.rpm
+          tar -cf "$USERSPACE_ARCHIVE" *.rpm
+          sha256sum "$USERSPACE_ARCHIVE" > "$USERSPACE_CHECKSUM"
+          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$USERSPACE_ARCHIVE" "https://cloud.fogas.net/public.php/webdav/$USERSPACE_ARCHIVE"
+          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$USERSPACE_CHECKSUM" "https://cloud.fogas.net/public.php/webdav/$USERSPACE_CHECKSUM"
+          popd
+
+      - name: Upload selected kernel packages
+        env:
+          ARTIFACT_UPLOAD_KEY: ${{ secrets.ARTIFACT_UPLOAD_KEY }}
+          KERNEL_ARCHIVE: ${{ env.PKG_ID }}-${{ env.PKG_ARCH }}-zfs-kernel-packages.tar
+          KERNEL_CHECKSUM: ${{ env.PKG_ID }}-${{ env.PKG_ARCH }}-zfs-kernel-packages.sha256
+        run: |
+          pushd ./output/kernel/
+          ls -lh
+          rm -f *.src.rpm
+          rm -f *debug*.rpm
+          tar -cf "$KERNEL_ARCHIVE" *.rpm
+          sha256sum "$KERNEL_ARCHIVE" > "$KERNEL_CHECKSUM"
+          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$KERNEL_ARCHIVE" "https://cloud.fogas.net/public.php/webdav/$KERNEL_ARCHIVE"
+          curl -u "$ARTIFACT_UPLOAD_KEY:" -T "$KERNEL_CHECKSUM" "https://cloud.fogas.net/public.php/webdav/$KERNEL_CHECKSUM"
+          popd
