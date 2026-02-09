@@ -49,6 +49,8 @@ STANDARD_PACKAGES+="git-core rustfmt "
 EXTRA_PACKAGES="python3 python3-setuptools python3-cffi python3-packaging python3-docutils python3-pyyaml python3-devel "
 # not present in AlmaLinux9 default repos, only in EPEL
 EXTRA_PACKAGES+="bindgen fuse-devel glibc-static libbabeltrace-devel libbpf-devel libmnl-devel libtraceevent-devel libtracefs-devel "
+# required since kernel 6.18
+EXTRA_PACKAGES+="capstone-devel dosfstools e2fsprogs libasan-static libpfm-devel libubsan liburing-devel xfsprogs xxd "
 if [ "$KRN_VENDOR" = "fedora" ]; then
   # Build OpenZFS userspace packages and kernel for Fedora
   STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress bpftool clippy swig "
