@@ -1,7 +1,7 @@
 OS_VERSION=43
 KRN_VENDOR=fedora
 # https://bodhi.fedoraproject.org/updates/?search=&packages=kernel&releases=F43
-KRN_VERSION=6.18.12
+KRN_VERSION=6.18.13
 KRN_RELEASE=200
 KRN_ARCH=x86_64
 ZFS_GIT_TAG=zfs-2.4.1-staging
