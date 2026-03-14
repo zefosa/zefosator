@@ -50,11 +50,11 @@ EXTRA_PACKAGES="python3 python3-setuptools python3-cffi python3-packaging python
 # not present in AlmaLinux9 default repos, only in EPEL
 EXTRA_PACKAGES+="bindgen fuse-devel glibc-static libbabeltrace-devel libbpf-devel libmnl-devel libtraceevent-devel libtracefs-devel "
 # required since kernel 6.18
-EXTRA_PACKAGES+="capstone-devel dosfstools e2fsprogs libasan-static libpfm-devel libubsan liburing-devel xfsprogs xxd "
+EXTRA_PACKAGES+="capstone-devel dosfstools e2fsprogs libpfm-devel libubsan liburing-devel xfsprogs "
 if [ "$KRN_VENDOR" = "fedora" ]; then
   # Build OpenZFS userspace packages and kernel for Fedora
   STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress bpftool clippy swig "
-  EXTRA_PACKAGES+="python3-wheel python3-jsonschema "
+  EXTRA_PACKAGES+="python3-wheel python3-jsonschema libasan-static xxd "
   KERNEL_PKG_BASE_NAME=kernel
   # https://kojipkgs.fedoraproject.org/packages/kernel/6.12.6/100.fc40/src/kernel-6.12.6-100.fc40.src.rpm
   KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.src.rpm
