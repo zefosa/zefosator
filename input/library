@@ -1,18 +1,5 @@
 #!/usr/bin/env bash
 
-# directory of unpacked linux source tarball inside rpm build tree
-if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
-  # kernels >6.12, i.e. 6.13+
-  if [ "$KRN_VERSION_MAJOR" -gt 6 ] || { [ "$KRN_VERSION_MAJOR" -eq 6 ] && [ "$KRN_VERSION_MINOR" -gt 12 ]; }; then
-    # /build/BUILD/kernel-6.13.11-build/kernel-6.13.11/linux-6.13.11-200.zfs.fc41.x86_64
-    LINUX_SRC_DIR="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-build/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
-  else
-    # /build/BUILD/kernel-6.12.15/linux-6.12.15-100.zfs.fc40.x86_64
-    LINUX_SRC_DIR="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}"
-  fi
-else # almalinux 9
-  LINUX_SRC_DIR="$(rpm --eval "%{_builddir}")/kernel-${KRN_VERSION}-${KRN_RELEASE}.el${OS_VERSION_MAJOR}_${OS_VERSION_MINOR}/linux-${KRN_VERSION}-${KRN_RELEASE}.zfs.el${OS_VERSION_MAJOR}.${KRN_ARCH}"
-fi
 
 # List of kernel config files
 aarch64_config_files=(
@@ -35,6 +22,32 @@ aarch64_config_files=(
 function create_dirs {
   set -e
   mkdir -p ${CACHE_DIR}/kernel-rpms
+}
+
+# Locate the unpacked linux source tree inside %{_builddir} after
+# rpmbuild -bp has run. Sets and exports LINUX_SRC_DIR. Searches by the
+# directory's own name (linux-${KRN_VERSION}-*.zfs.*.${KRN_ARCH}), which is
+# stable across SPEC layout changes that mutate the parent dir name.
+function discover_linux_src_dir {
+  set -e
+  local builddir
+  builddir="$(rpm --eval "%{_builddir}")"
+  LINUX_SRC_DIR=$(find "$builddir" -maxdepth 5 -type d \
+                  -name "linux-${KRN_VERSION}-*.zfs.*.${KRN_ARCH}" -print -quit)
+  if [ -z "$LINUX_SRC_DIR" ] || [ ! -d "$LINUX_SRC_DIR" ]; then
+    echo "Error: failed to locate prepared linux source directory under $builddir" >&2
+    echo "linux-* directories present:" >&2
+    find "$builddir" -maxdepth 5 -type d -name 'linux-*' >&2 || true
+    exit 1
+  fi
+  echo "Discovered LINUX_SRC_DIR=$LINUX_SRC_DIR"
+  # Vendor SPECs occasionally diverge between SRPM filename release and the
+  # internal release tag (RHEL z-stream rebuilds keep %{specrelease} pinned).
+  # Warn rather than fail so the build proceeds against whatever was unpacked.
+  if [[ "$(basename "$LINUX_SRC_DIR")" != *"${KRN_VERSION}-${KRN_RELEASE}.zfs."* ]]; then
+    echo "Warning: discovered source dir '$(basename "$LINUX_SRC_DIR")' does not contain ${KRN_VERSION}-${KRN_RELEASE}; vendor SPEC may use a different internal release tag." >&2
+  fi
+  export LINUX_SRC_DIR
 }
 
 function download_kernel_sources {
@@ -107,6 +120,14 @@ function prepare_kernel_sources {
   /usr/bin/rpmbuild -bp kernel.spec
   popd
 
+  # Vendor SPECs bury the unpacked linux source tarball inside the rpm build
+  # tree under varying parent layouts: AlmaLinux/RHEL z-stream rebuilds keep %{specrelease}
+  # pinned to the previous release while the SRPM filename advances (e.g. SRPM
+  # kernel-5.14.0-611.49.2.el9_7 unpacks under BUILD/kernel-5.14.0-611.49.1.el9_7/);
+  # Fedora kernels >=6.13 wrap it in kernel-${KRN_VERSION}-build/kernel-${KRN_VERSION}/
+  # while <=6.12 do not. Discovered at runtime by discover_linux_src_dir()
+  # after rpmbuild -bp has unpacked the tree.
+  discover_linux_src_dir
   ls -al "$LINUX_SRC_DIR"
 
   pushd "$LINUX_SRC_DIR"

@@ -3,3 +3,4 @@
 /build/**
 input/variables
 test/**
+/logs/**
