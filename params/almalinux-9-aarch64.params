@@ -1,8 +1,8 @@
 # https://vault.almalinux.org/9/BaseOS/Source/Packages/
 # kernel-5.14.0-611.49.2.el9_7.src.rpm
+OS_VERSION=9.7
 KRN_VENDOR=almalinux9
 KRN_ARCH=aarch64
-OS_VERSION=9.7
 KRN_VERSION=5.14.0
 KRN_RELEASE=611.49.2
 ZFS_GIT_TAG=zfs-2.4.1

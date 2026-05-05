@@ -1,6 +1,6 @@
 OS_VERSION=43
 KRN_VENDOR=fedora
-# https://bodhi.fedoraproject.org/updates/?search=&packages=kernel&releases=F43
+# https://koji.fedoraproject.org/koji/packageinfo?packageID=8
 KRN_VERSION=7.0.3
 KRN_RELEASE=200
 KRN_ARCH=x86_64
