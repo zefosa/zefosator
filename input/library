@@ -181,8 +181,15 @@ function prepare_zfs_sources {
   sed -i "s/Version:.*/Version:       ${ZFS_PKG_VERSION}/" META
   sed -i "s/Release:.*/Release:       ${ZFS_PKG_RELEASE}/" META
 
-  echo "Patching META supported kernel version..."
-  sed -i "s/Linux-Maximum:.*/Linux-Maximum: ${KRN_VERSION_MAJOR}.${KRN_VERSION_MINOR}/" META
+  ZFS_EXTRA_CONFIGURE_FLAGS=""
+  if [ "${ENABLE_LINUX_EXPERIMENTAL}" -eq 1 ]; then
+    # official OpenZFS mechanism for building against kernels newer than META Linux-Maximum
+    echo "Enabling experimental Linux kernel support, META left intact..."
+    ZFS_EXTRA_CONFIGURE_FLAGS="--enable-linux-experimental"
+  else
+    echo "Patching META supported kernel version..."
+    sed -i "s/Linux-Maximum:.*/Linux-Maximum: ${KRN_VERSION_MAJOR}.${KRN_VERSION_MINOR}/" META
+  fi
 
   if [ ! -f "${ZFS_GIT_TAG}/Makefile" ]; then
     echo "Launching autogen..."
@@ -191,10 +198,10 @@ function prepare_zfs_sources {
 
   echo "Configuring ZFS built-in build..."
   if [ "$KRN_VENDOR" = "fedora" ] || [ "$KRN_VENDOR" = "zefosa" ]; then
-    ./configure --enable-linux-builtin --with-linux="$LINUX_SRC_DIR/"
+    ./configure --enable-linux-builtin ${ZFS_EXTRA_CONFIGURE_FLAGS} --with-linux="$LINUX_SRC_DIR/"
     ./copy-builtin "$LINUX_SRC_DIR/"
   elif [ "$KRN_VENDOR" = "almalinux9" ]; then
-    ./configure --enable-linux-builtin --with-linux="$LINUX_SRC_DIR/"
+    ./configure --enable-linux-builtin ${ZFS_EXTRA_CONFIGURE_FLAGS} --with-linux="$LINUX_SRC_DIR/"
     ./copy-builtin "$LINUX_SRC_DIR/"
   fi
   popd

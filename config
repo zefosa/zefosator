@@ -22,6 +22,8 @@ fi
 ZFS_GITHUB_REPO=${ZFS_GITHUB_REPO:=https://github.com/openzfs/zfs.git}
 # 1 = set license to GPL v2
 ENABLE_LICENSE_PATCH=${ENABLE_LICENSE_PATCH:=0}
+# 1 = pass --enable-linux-experimental to OpenZFS configure instead of patching META Linux-Maximum
+ENABLE_LINUX_EXPERIMENTAL=${ENABLE_LINUX_EXPERIMENTAL:=0}
 # 1 = drop BuildRequires line from RPM SPEC in case kernel-devel package has different name
 ENABLE_SPEC_PATCH=${ENABLE_SPEC_PATCH:=0}
 # podman base image

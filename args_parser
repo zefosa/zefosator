@@ -104,6 +104,10 @@ while (( "$#" )); do
       ENABLE_LICENSE_PATCH=1
       shift
       ;;
+    --linux-experimental)
+      ENABLE_LINUX_EXPERIMENTAL=1
+      shift
+      ;;
     -*|--*=) # unsupported flags
       echo "Error: Unsupported flag $1" >&2
       exit 1
@@ -155,6 +159,10 @@ show_help() {
   echo "                   fedora (default), zefosa, almalinux9"
   echo "     --patch-license"
   echo "                   Set if you don't want 'tainted' kernel messages on your systems."
+  echo "     --linux-experimental"
+  echo "                   Pass --enable-linux-experimental to OpenZFS configure to allow"
+  echo "                   building against kernels newer than META Linux-Maximum."
+  echo "                   META file is left intact instead of patching Linux-Maximum."
   echo "     --params-file <file_name>"
   echo "                   Optional. Load required/optional parameters from file."
   echo "  "
