@@ -1,10 +1,12 @@
 OS_VERSION=44
 KRN_VENDOR=fedora
 # https://koji.fedoraproject.org/koji/packageinfo?packageID=8
-KRN_VERSION=7.0.14
+KRN_VERSION=7.1.3
 KRN_RELEASE=201
 KRN_ARCH=x86_64
 #ZFS_GITHUB_REPO=https://github.com/tonyhutter/zfs.git
 ZFS_GIT_TAG=zfs-2.4.3
 ZFS_PKG_VERSION=2.4.3
 ZFS_PKG_RELEASE=100
+# kernel 7.1 is newer than zfs-2.4.3 META Linux-Maximum
+ENABLE_LINUX_EXPERIMENTAL=1
