@@ -100,6 +100,15 @@ while (( "$#" )); do
         exit 1
       fi
       ;;
+    --krn-srcrpm-os-version)
+      if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+        KRN_SRCRPM_OS_VERSION=$2
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
     --patch-license)
       ENABLE_LICENSE_PATCH=1
       shift
@@ -154,6 +163,10 @@ show_help() {
   echo "     --krn-arch <cpu_arch>"
   echo "                   Optional. Kernel architecture to build OpenZFS packages for."
   echo "                   Only x86_64 is currently supported and set by default."
+  echo "     --krn-srcrpm-os-version <fedora_version>"
+  echo "                   Optional. Fedora release the kernel SRC RPM was built for, defaults"
+  echo "                   to --os-version. Set to e.g. 45 to rebuild Fedora 45 kernel SRC RPM"
+  echo "                   on Fedora 44 (fedora-next kernel). Used with --krn-vendor fedora/zefosa."
   echo "     --krn-vendor <kernel_vendor>"
   echo "                   Optional. Kernel vendor name, allowed values:"
   echo "                   fedora (default), zefosa, almalinux9"

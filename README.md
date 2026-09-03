@@ -24,6 +24,11 @@ Building OpenZFS 2.2.7 for Fedora 40 using linux-6.12.22.tar.xz from kernel.org 
 ./zefosator --build --krn-vendor zefosa --os-version 40 --krn-version 6.12.15 --krn-tarball-version 6.12.22 --krn-release 100 --git-tag zfs-2.2.7 --pkg-version 2.2.7 --pkg-release 1
 ```
 
+Building OpenZFS 2.4.4 for Fedora 44 using Fedora 45 kernel-7.2.3-300.fc45.src.rpm as kernel source (fedora-next kernel, packages get .fc44 dist tag):
+```
+./zefosator --build --os-version 44 --krn-srcrpm-os-version 45 --krn-version 7.2.3 --krn-release 300 --git-tag zfs-2.4.4 --pkg-version 2.4.4 --pkg-release 100
+```
+
 Building OpenZFS 2.2.4 for AlmaLinux 9.4 kernel 5.14.0-362.24.1:
 ```
 ./zefosator --build --krn-vendor almalinux --os-version 9.4 --krn-version 5.14.0 --krn-release 427.13.1 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1

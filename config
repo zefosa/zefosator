@@ -13,6 +13,10 @@ KRN_VERSION_PATCH="${KRN_VERSION_NUMBERS[2]}"
 KRN_VENDOR=${KRN_VENDOR:=fedora}
 # default --krn-arch
 KRN_ARCH=${KRN_ARCH:=x86_64}
+# default --krn-srcrpm-os-version: Fedora release the kernel SRC RPM was built for.
+# Set to e.g. 45 to rebuild a Fedora 45 kernel SRC RPM inside a Fedora 44 container
+# (packages get the build host's .fc44 dist tag).
+KRN_SRCRPM_OS_VERSION=${KRN_SRCRPM_OS_VERSION:=${OS_VERSION_MAJOR}}
 
 # additional list of commits to cherry-pick before building
 if [ -n "${PARAMS}" ]; then
@@ -55,19 +59,19 @@ EXTRA_PACKAGES+="bindgen fuse-devel glibc-static libbabeltrace-devel libbpf-deve
 EXTRA_PACKAGES+="capstone-devel dosfstools e2fsprogs libpfm-devel libubsan liburing-devel xfsprogs "
 if [ "$KRN_VENDOR" = "fedora" ]; then
   # Build OpenZFS userspace packages and kernel for Fedora
-  STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress bpftool clippy swig "
+  STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress bpftool clippy swig libbabeltrace2-devel "
   EXTRA_PACKAGES+="python3-wheel python3-jsonschema libasan-static xxd "
   KERNEL_PKG_BASE_NAME=kernel
   # https://kojipkgs.fedoraproject.org/packages/kernel/6.12.6/100.fc40/src/kernel-6.12.6-100.fc40.src.rpm
-  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.src.rpm
-  KERNEL_SRC_URL="https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_VERSION}/${KRN_RELEASE}.fc${OS_VERSION_MAJOR}/src/${KERNEL_SRC_PKG}"
+  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_VERSION}-${KRN_RELEASE}.fc${KRN_SRCRPM_OS_VERSION}.src.rpm
+  KERNEL_SRC_URL="https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_VERSION}/${KRN_RELEASE}.fc${KRN_SRCRPM_OS_VERSION}/src/${KERNEL_SRC_PKG}"
 elif [ "$KRN_VENDOR" = "zefosa" ]; then
   # Build OpenZFS userspace packages and kernel for Fedora using specific kernel source tarball version from kernel.org
   STANDARD_PACKAGES+="dkms libtirpc-devel rpmrebuild ncompress "
   KERNEL_PKG_BASE_NAME=kernel
   # https://kojipkgs.fedoraproject.org/packages/kernel/6.12.15/100.fc40/src/kernel-6.12.15-100.fc40.src.rpm
-  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_SRCRPM_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.src.rpm
-  KERNEL_SRC_URL="https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_SRCRPM_VERSION}/${KRN_RELEASE}.fc${OS_VERSION_MAJOR}/src/${KERNEL_SRC_PKG}"
+  KERNEL_SRC_PKG=${KERNEL_PKG_BASE_NAME}-${KRN_SRCRPM_VERSION}-${KRN_RELEASE}.fc${KRN_SRCRPM_OS_VERSION}.src.rpm
+  KERNEL_SRC_URL="https://kojipkgs.fedoraproject.org/packages/kernel/${KRN_SRCRPM_VERSION}/${KRN_RELEASE}.fc${KRN_SRCRPM_OS_VERSION}/src/${KERNEL_SRC_PKG}"
   # https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.22.tar.xz
   KERNEL_TARBALL="linux-${KRN_VERSION}.tar.xz"
   KERNEL_TARBALL_URL="https://cdn.kernel.org/pub/linux/kernel/v${KRN_VERSION_MAJOR}.x/${KERNEL_TARBALL}"
