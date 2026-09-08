@@ -1,11 +1,11 @@
 OS_VERSION=44
 KRN_VENDOR=fedora
 # override Fedora release the kernel SRC RPM was built for (use Fedora 45 kernel source)
-KRN_SRCRPM_OS_VERSION=45
+# KRN_SRCRPM_OS_VERSION=45
 # https://koji.fedoraproject.org/koji/packageinfo?packageID=8
 # kernel-7.2.3-300.fc45.src.rpm
-KRN_VERSION=7.2.3
-KRN_RELEASE=300
+KRN_VERSION=7.2.4
+KRN_RELEASE=200
 KRN_ARCH=x86_64
 #ZFS_GITHUB_REPO=https://github.com/tonyhutter/zfs.git
 ZFS_GIT_TAG=zfs-2.4.4
