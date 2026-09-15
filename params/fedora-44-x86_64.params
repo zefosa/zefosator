@@ -4,7 +4,7 @@ KRN_VENDOR=fedora
 # KRN_SRCRPM_OS_VERSION=45
 # https://koji.fedoraproject.org/koji/packageinfo?packageID=8
 # kernel-7.2.3-300.fc45.src.rpm
-KRN_VERSION=7.2.5
+KRN_VERSION=7.2.6
 KRN_RELEASE=200
 KRN_ARCH=x86_64
 #ZFS_GITHUB_REPO=https://github.com/tonyhutter/zfs.git
