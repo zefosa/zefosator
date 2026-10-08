@@ -12,6 +12,7 @@ function create_variables_file {
 		KRN_RELEASE="${KRN_RELEASE}"
 		KRN_VENDOR="${KRN_VENDOR}"
 		KRN_ARCH="${KRN_ARCH}"
+		KRN_BUILDID="${KRN_BUILDID}"
 		OS_VERSION="${OS_VERSION}"
 		OS_VERSION_MAJOR="${OS_VERSION_MAJOR}"
 		OS_VERSION_MINOR="${OS_VERSION_MINOR}"
@@ -105,13 +106,13 @@ function build_rpms_local {
 
 function list_initramfs_zfs {
   # initramfs visual inspection
-  echo "ZFS related files in /boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img:"
-  lsinitrd "/boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.zfs.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img" | grep "/zfs"
+  echo "ZFS related files in /boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.${KRN_BUILDID}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img:"
+  lsinitrd "/boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.${KRN_BUILDID}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img" | grep "/zfs"
 }
 
 function update_initramfs {
   set -e
-  dracut "/boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img" "${KRN_VERSION}-${KRN_RELEASE}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" --force
+  dracut "/boot/initramfs-${KRN_VERSION}-${KRN_RELEASE}.${KRN_BUILDID}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}.img" "${KRN_VERSION}-${KRN_RELEASE}.${KRN_BUILDID}.fc${OS_VERSION_MAJOR}.${KRN_ARCH}" --force
 }
 
 function list_installed_kernels {

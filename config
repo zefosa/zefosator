@@ -13,6 +13,8 @@ KRN_VERSION_PATCH="${KRN_VERSION_NUMBERS[2]}"
 KRN_VENDOR=${KRN_VENDOR:=fedora}
 # default --krn-arch
 KRN_ARCH=${KRN_ARCH:=x86_64}
+# default kernel RPM release build ID (kernel.spec buildid), e.g. kernel-7.2.9-200.zefosa.fc44
+KRN_BUILDID=${KRN_BUILDID:=zefosa}
 # default --krn-srcrpm-os-version: Fedora release the kernel SRC RPM was built for.
 # Set to e.g. 45 to rebuild a Fedora 45 kernel SRC RPM inside a Fedora 44 container
 # (packages get the build host's .fc44 dist tag).

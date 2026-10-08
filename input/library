@@ -26,14 +26,14 @@ function create_dirs {
 
 # Locate the unpacked linux source tree inside %{_builddir} after
 # rpmbuild -bp has run. Sets and exports LINUX_SRC_DIR. Searches by the
-# directory's own name (linux-${KRN_VERSION}-*.zfs.*.${KRN_ARCH}), which is
+# directory's own name (linux-${KRN_VERSION}-*.${KRN_BUILDID}.*.${KRN_ARCH}), which is
 # stable across SPEC layout changes that mutate the parent dir name.
 function discover_linux_src_dir {
   set -e
   local builddir
   builddir="$(rpm --eval "%{_builddir}")"
   LINUX_SRC_DIR=$(find "$builddir" -maxdepth 5 -type d \
-                  -name "linux-${KRN_VERSION}-*.zfs.*.${KRN_ARCH}" -print -quit)
+                  -name "linux-${KRN_VERSION}-*.${KRN_BUILDID}.*.${KRN_ARCH}" -print -quit)
   if [ -z "$LINUX_SRC_DIR" ] || [ ! -d "$LINUX_SRC_DIR" ]; then
     echo "Error: failed to locate prepared linux source directory under $builddir" >&2
     echo "linux-* directories present:" >&2
@@ -44,7 +44,7 @@ function discover_linux_src_dir {
   # Vendor SPECs occasionally diverge between SRPM filename release and the
   # internal release tag (RHEL z-stream rebuilds keep %{specrelease} pinned).
   # Warn rather than fail so the build proceeds against whatever was unpacked.
-  if [[ "$(basename "$LINUX_SRC_DIR")" != *"${KRN_VERSION}-${KRN_RELEASE}.zfs."* ]]; then
+  if [[ "$(basename "$LINUX_SRC_DIR")" != *"${KRN_VERSION}-${KRN_RELEASE}.${KRN_BUILDID}."* ]]; then
     echo "Warning: discovered source dir '$(basename "$LINUX_SRC_DIR")' does not contain ${KRN_VERSION}-${KRN_RELEASE}; vendor SPEC may use a different internal release tag." >&2
   fi
   export LINUX_SRC_DIR
@@ -78,7 +78,7 @@ function prepare_kernel_sources {
   pushd "$(rpm --eval "%{_specdir}")"
   # error if there is no buildid pattern to replace
   grep "# define buildid .local" kernel.spec > /dev/null
-  sed -i "s/# define buildid .local/%define buildid .zfs/" kernel.spec
+  sed -i "s/# define buildid .local/%define buildid .${KRN_BUILDID}/" kernel.spec
   # Append changelog entry
   "${INPUT_DIR}/append-changelog.py" kernel.spec Zefosa zefosa@fogas.net "${KRN_VERSION}-${KRN_RELEASE}" "ZFS ${ZFS_PKG_VERSION} built-in (Giedrius M.)"
   if [ "$KRN_VENDOR" = "zefosa" ]; then
@@ -254,10 +254,20 @@ function build_kernel_rpms {
   fi
   # Add "Provides: zfs-kmod = 2.2.7\" below "Provides: kernel = %{specversion}-%{pkg_release}\"
   sed -i "/Provides: kernel = %{specversion}-%{pkg_release}/a\Provides: zfs-kmod = ${ZFS_PKG_VERSION}\\\\" kernel.spec
+  # error if there is no initrd_prereq pattern to append root-on-zfs requirements to
+  grep "Requires(pre): %{initrd_prereq}" kernel.spec > /dev/null
+  # Add "Conflicts: zfs-dkms\" below "Requires(pre): %{initrd_prereq}\", ZFS is built-in
+  sed -i "/Requires(pre): %{initrd_prereq}/a\Conflicts: zfs-dkms\\\\" kernel.spec
+  # Add "Requires: zfs-dracut >= 2.2.7\" below "Requires(pre): %{initrd_prereq}\",
+  # initramfs built in kernel-core %posttrans must include ZFS dracut module
+  sed -i "/Requires(pre): %{initrd_prereq}/a\Requires: zfs-dracut >= ${ZFS_PKG_VERSION}\\\\" kernel.spec
+  # Disable UKI images, their initramfs is built at build time without ZFS dracut module.
+  # Fedora SPEC honors "--without efiuki", EL9 SPEC hardcodes "%global efiuki 1".
+  sed -i "s/^%global efiuki 1$/%global efiuki 0/" kernel.spec
   echo "Building kernel packages..."
   rpmbuild -bb  --without configchecks --without headers --without cross-headers \
     --without kabichk --without doc --without selftests --with baseonly --without debuginfo \
-    --without kernel-abi-stablelists \
+    --without kernel-abi-stablelists --without efiuki \
     --target=${KRN_ARCH} kernel.spec
   popd
 }
