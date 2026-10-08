@@ -1,0 +1,51 @@
+# AlmaLinux kernels from the official mirrors, signed by AlmaLinux.
+defaults:
+  image:
+    base: "docker.io/almalinux/{{ os_major }}-base"
+    setup_packages: [epel-release]
+    enable_repos: [crb, epel]
+    packages:
+      - autoconf
+      - automake
+      - bison
+      - cpio
+      - elfutils-libelf-devel
+      - findutils
+      - flex
+      - gcc
+      - git-core
+      - kernel-rpm-macros
+      - libaio-devel
+      - libattr-devel
+      - libblkid-devel
+      - libffi-devel
+      - libtirpc-devel
+      - libtool
+      - libudev-devel
+      - libuuid-devel
+      - make
+      - ncompress
+      - openssl-devel
+      - python3
+      - python3-cffi
+      - python3-devel
+      - python3-packaging
+      - python3-setuptools
+      - rpm-build
+      - xz
+      - zlib-devel
+  dist_tag: "el{{ os_major }}_{{ os_minor }}"
+  gpg_keys: ["/etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-{{ os_major }}"]
+  # AlmaLinux 9 packages are served from raw.repo.almalinux.org (as in v1).
+  kernel_url: "https://{{ 'raw.' if os_major == 9 }}repo.almalinux.org/almalinux/{{ os_version }}/{{ repo }}/{{ arch }}/os/Packages/{{ file }}"
+  packages:
+    - {name: kernel, repo: BaseOS}
+    - {name: kernel-core, repo: BaseOS, role: core}
+    - {name: kernel-modules-core, repo: BaseOS, role: modules}
+    - {name: kernel-modules, repo: BaseOS}
+    - {name: kernel-modules-extra, repo: BaseOS}
+    - {name: kernel-devel, repo: AppStream, role: devel}
+    - {name: kernel-devel-matched, repo: AppStream}
+    - {name: kernel-headers, repo: AppStream}
+    - {name: kernel-abi-stablelists, repo: BaseOS, arch: noarch}
+overrides: []

@@ -1,0 +1,10 @@
+# https://koji.fedoraproject.org/koji/packageinfo?packageID=8
+vendor: fedora
+os_version: "44"
+arch: x86_64
+kernel:
+  version: 7.2.9
+  release: "200"
+zfs:
+  tag: zfs-2.4.4
+  version: 2.4.4

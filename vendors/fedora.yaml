@@ -1,0 +1,49 @@
+# Fedora kernels from Koji. Koji RPMs are unsigned: only digests are checked.
+defaults:
+  image:
+    base: "docker.io/library/fedora:{{ os_major }}"
+    setup_packages: []
+    enable_repos: []
+    packages:
+      - autoconf
+      - automake
+      - bison
+      - cpio
+      - elfutils-libelf-devel
+      - findutils
+      - flex
+      - gcc
+      - git-core
+      - kernel-rpm-macros
+      - libaio-devel
+      - libattr-devel
+      - libblkid-devel
+      - libffi-devel
+      - libtirpc-devel
+      - libtool
+      - libudev-devel
+      - libuuid-devel
+      - make
+      - ncompress
+      - openssl-devel
+      - python3
+      - python3-cffi
+      - python3-devel
+      - python3-packaging
+      - python3-setuptools
+      - rpm-build
+      - xz
+      - zlib-devel
+  dist_tag: "fc{{ os_major }}"
+  gpg_keys: []
+  kernel_url: "https://kojipkgs.fedoraproject.org/packages/kernel/{{ kernel.version }}/{{ upstream_release }}/{{ pkg_arch }}/{{ file }}"
+  packages:
+    - {name: kernel}
+    - {name: kernel-core, role: core}
+    - {name: kernel-modules-core, role: modules}
+    - {name: kernel-modules}
+    - {name: kernel-modules-extra}
+    - {name: kernel-modules-internal}
+    - {name: kernel-devel, role: devel}
+    - {name: kernel-devel-matched}
+overrides: []

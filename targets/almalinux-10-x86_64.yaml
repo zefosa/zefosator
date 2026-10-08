@@ -1,0 +1,10 @@
+# https://vault.almalinux.org/10/BaseOS/Source/Packages/
+vendor: almalinux
+os_version: "10.2"
+arch: x86_64
+kernel:
+  version: 6.12.0
+  release: 211.56.1
+zfs:
+  tag: zfs-2.3.9
+  version: 2.3.9

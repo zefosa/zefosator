@@ -1,0 +1,10 @@
+# https://vault.almalinux.org/9/BaseOS/Source/Packages/
+vendor: almalinux
+os_version: "9.8"
+arch: x86_64
+kernel:
+  version: 5.14.0
+  release: 687.52.1
+zfs:
+  tag: zfs-2.3.9
+  version: 2.3.9
