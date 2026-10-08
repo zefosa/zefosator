@@ -4,6 +4,7 @@ import os
 import re
 import shlex
 import shutil
+import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -66,20 +67,32 @@ def _set_meta(meta: Path, values: Mapping[str, str]) -> None:
 
 
 def _clone(plan: Plan, cache: Path, runner: Runner, log: Path) -> Path:
+    """Return a complete cached clone of zfs.tag; clones atomically so interrupted or concurrent
+    builds never leave or use a partial clone."""
     zfs = plan.zfs
     full = bool(zfs.cherry_picks)
     dest = cache / "zfs-src" / (zfs.tag + ("-full" if full else ""))
     if dest.is_dir():
-        return dest
+        try:
+            runner(["git", "-C", str(dest), "rev-parse", "--verify", "--quiet", "HEAD"])
+        except BuildError:
+            shutil.rmtree(dest)  # left by an interrupted clone from an earlier version
+        else:
+            return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp(dir=dest.parent, prefix=f"{dest.name}.tmp-"))
     depth = () if full else ("--depth", "1")
     try:
         runner(
-            ["git", "clone", "--quiet", *depth, "--branch", zfs.tag, zfs.repo, str(dest)], log=log
+            ["git", "clone", "--quiet", *depth, "--branch", zfs.tag, zfs.repo, str(tmp)], log=log
         )
+        tmp.rename(dest)
     except BuildError:
-        shutil.rmtree(dest, ignore_errors=True)
+        shutil.rmtree(tmp, ignore_errors=True)
         raise
+    except OSError:
+        # Another build finished the same clone first; theirs is complete, keep it.
+        shutil.rmtree(tmp, ignore_errors=True)
     return dest
 
 
