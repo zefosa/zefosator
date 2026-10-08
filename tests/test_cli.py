@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from zefosator import podman
+from zefosator import podman, verify
 from zefosator.cli import main
 from zefosator.config import Plan
 
@@ -37,3 +37,14 @@ def test_build_runs_podman_build_with_project_root(monkeypatch: pytest.MonkeyPat
     target = ROOT / "targets" / "almalinux-10-x86_64.yaml"
     assert main(["build", str(target), "--buildid", "zefosa1"]) == 0
     assert calls == [("211.56.1.zefosa1.el10_2", ROOT)]
+
+
+def test_verify_runs_host_verify(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, Path]] = []
+
+    def fake_verify(plan: Plan, root: Path) -> None:
+        calls.append((plan.target_id, root))
+
+    monkeypatch.setattr(verify, "verify", fake_verify)
+    assert main(["verify", str(ROOT / "targets" / "fedora-44-x86_64.yaml")]) == 0
+    assert calls == [("fedora-44-x86_64", ROOT)]

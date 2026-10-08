@@ -3,13 +3,14 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from zefosator import podman
+from zefosator import podman, verify
 from zefosator.config import load_plan, project_root
 from zefosator.errors import ZefosatorError
 
 COMMANDS = (
     ("plan", "print the resolved build plan as JSON"),
     ("build", "build OpenZFS and repackage the kernel into output/<target-id>/"),
+    ("verify", "install output/<target-id>/ in a clean vendor container and check it"),
 )
 
 
@@ -38,6 +39,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(plan.model_dump_json(indent=2))
         elif args.command == "build":
             podman.build(plan, project_root(args.target))
+        elif args.command == "verify":
+            verify.verify(plan, project_root(args.target))
     except ZefosatorError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
