@@ -72,7 +72,11 @@ def stage_modules(
 ) -> tuple[FileEntry, ...]:
     """Copy kmod-zfs modules into the build root; return their file entries (new dirs included)."""
     moddir = kmod_root / "lib" / "modules" / uname_r
-    files = sorted(p for p in kmod_root.rglob("*") if not p.is_dir())
+    # rpmbuild adds /usr/lib/.build-id links to kmod packages; the kernel packages do not need them.
+    build_ids = kmod_root / "usr" / "lib" / ".build-id"
+    files = sorted(
+        p for p in kmod_root.rglob("*") if not p.is_dir() and not p.is_relative_to(build_ids)
+    )
     unexpected = [p for p in files if not p.is_relative_to(moddir) or ".ko" not in p.name]
     if unexpected:
         listed = ", ".join(str(p.relative_to(kmod_root)) for p in unexpected)

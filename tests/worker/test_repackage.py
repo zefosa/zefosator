@@ -206,3 +206,15 @@ def test_wrong_upstream_release_rejected() -> None:
     header = Header("a", None, "7.2.9", "201.fc44", "x86_64", "s", "d", "GPL")
     with pytest.raises(BuildError, match=r"downloaded package is 7\.2\.9-201\.fc44"):
         check_inputs([header], context())
+
+
+def test_stage_modules_ignores_build_id_links(tmp_path: Path) -> None:
+    kmod = build_kmod_payload(tmp_path / "kmod")
+    links = kmod / "usr" / "lib" / ".build-id" / "2e"
+    links.mkdir(parents=True)
+    (links / "e58fccae").symlink_to(f"../../../../lib/modules/{UNAME_R}/extra/zfs/zfs.ko")
+    entries = stage_modules(
+        kmod, UNAME_R, tmp_path / "root", compress=True, known_paths=frozenset()
+    )
+    assert not [e for e in entries if ".build-id" in e.path]
+    assert not (tmp_path / "root" / "usr").exists()
