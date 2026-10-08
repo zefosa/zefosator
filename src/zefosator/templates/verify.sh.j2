@@ -16,7 +16,7 @@ check() {
 
 echo "==> Preparing local repository (priority=10) from build output"
 cp -a /output /tmp/repo
-dnf install -y createrepo_c > /tmp/setup.log 2>&1 || { cat /tmp/setup.log; exit 2; }
+dnf install -y createrepo_c rpm-build > /tmp/setup.log 2>&1 || { cat /tmp/setup.log; exit 2; }
 createrepo_c -q /tmp/repo || exit 2
 cat > /etc/yum.repos.d/zefosa-local.repo <<'REPO'
 [zefosa-local]
@@ -27,10 +27,37 @@ gpgcheck=0
 priority=10
 REPO
 
+# Repo priority is applied when dnf resolves packages (repoquery still lists every repo), so this
+# offers a newer kernel-core from a repo at the vendors' default priority and checks dnf's choice.
 preference() {
-    dnf repoquery kernel kernel-core kernel-modules-core > /tmp/repoquery.txt || return 1
-    cat /tmp/repoquery.txt
-    grep -q . /tmp/repoquery.txt && ! grep -v -F {{ (plan.kernel_version ~ "-" ~ plan.zefosa_release) | sh }} /tmp/repoquery.txt | grep -q .
+    mkdir -p /tmp/fake/SPECS /tmp/fake-repo
+    cat > /tmp/fake/SPECS/fake.spec <<'SPEC'
+Name: kernel-core
+Version: 99.0
+Release: 1
+Summary: Newer upstream kernel stand-in
+License: MIT
+BuildArch: noarch
+%description
+Stand-in for a newer upstream kernel.
+%files
+SPEC
+    rpmbuild -bb --quiet --define '_topdir /tmp/fake' --define '_rpmdir /tmp/fake-repo' \
+        /tmp/fake/SPECS/fake.spec || return 1
+    createrepo_c -q /tmp/fake-repo || return 1
+    cat > /etc/yum.repos.d/fake-upstream.repo <<'REPO'
+[fake-upstream]
+name=newer upstream stand-in
+baseurl=file:///tmp/fake-repo
+enabled=1
+gpgcheck=0
+priority=99
+REPO
+    dnf install --assumeno kernel-core > /tmp/resolve.txt 2>&1
+    rm -f /etc/yum.repos.d/fake-upstream.repo
+    cat /tmp/resolve.txt
+    grep -F {{ (plan.kernel_version ~ "-" ~ plan.zefosa_release) | sh }} /tmp/resolve.txt > /dev/null \
+        && ! grep -q '99\.0-1' /tmp/resolve.txt
 }
 
 install() {
