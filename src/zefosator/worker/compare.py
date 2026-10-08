@@ -9,8 +9,21 @@ from zefosator.worker.rpmheader import (
     FileEntry,
     Header,
 )
+from zefosator.worker.specgen import changelog_text
 
 _IDENTITY = ("name", "epoch", "version", "release", "arch")
+_METADATA = (
+    "summary",
+    "description",
+    "license",
+    "url",
+    "bugurl",
+    "group",
+    "vendor",
+    "distribution",
+    "packager",
+)
+DAY = 86400
 _FILE_FIELDS = ("mode", "user", "group", "size", "flags", "verifyflags", "digest", "linkto", "caps")
 # rpmbuild derives these from the payload and scriptlets it builds; they are not package intent.
 _REGENERATED = SENSE_INTERP | SENSE_RPMLIB
@@ -75,15 +88,29 @@ def _diff_scripts(name: str, expected: Header, actual: Header) -> list[str]:
     return diffs
 
 
+def _diff_changelog(name: str, expected: Header, actual: Header) -> list[str]:
+    if len(expected.changelog) != len(actual.changelog):
+        counts = f"has {len(actual.changelog)} entries, expected {len(expected.changelog)}"
+        return [f"{name}: changelog {counts}"]
+    return [
+        f"{name}: changelog entry {i} differs"
+        for i, (want, got) in enumerate(zip(expected.changelog, actual.changelog, strict=True), 1)
+        # rpm stores the parsed date, so only the day is meaningful.
+        if (want.name, changelog_text(want.text), want.time // DAY)
+        != (got.name, got.text, got.time // DAY)
+    ]
+
+
 def diff_headers(expected: Header, actual: Header) -> list[str]:
     """Return human-readable differences; an empty list means the rebuild is faithful."""
     name = expected.name
     diffs = [
         f"{name}: {field}: expected {getattr(expected, field)!r}, got {getattr(actual, field)!r}"
-        for field in _IDENTITY
+        for field in (*_IDENTITY, *_METADATA)
         if getattr(expected, field) != getattr(actual, field)
     ]
     diffs += _diff_files(name, expected.files, actual.files)
     diffs += _diff_scripts(name, expected, actual)
     diffs += _diff_deps(name, expected, actual)
+    diffs += _diff_changelog(name, expected, actual)
     return diffs

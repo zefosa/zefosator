@@ -116,6 +116,11 @@ def escape(text: str) -> str:
     return text.replace("%", "%%")
 
 
+def changelog_text(text: str) -> str:
+    """rpmbuild reads a changelog line starting with `*` as a new entry; indent such lines."""
+    return "\n".join(f" {line}" if line.startswith("*") else line for line in text.split("\n"))
+
+
 def dependency_line(kind: DepKind, dep: Dependency) -> str:
     allowed = SENSE_COMPARE | SENSE_GENERATOR_ORIGIN
     if kind is DepKind.REQUIRE:
@@ -290,7 +295,7 @@ def render_spec(main: Header, subpackages: Sequence[Header]) -> str:
     changelog = tuple(
         ChangelogView(
             heading=f"{time.strftime('%a %b %d %Y', time.gmtime(e.time))} {escape(e.name)}",
-            text=escape(e.text),
+            text=escape(changelog_text(e.text)),
         )
         for e in main.changelog
     )

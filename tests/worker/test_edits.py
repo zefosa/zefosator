@@ -42,6 +42,7 @@ def ctx(role: Role | None = None, injected: tuple[FileEntry, ...] = ()) -> EditC
         role=role,
         injected=injected,
         changelog_time=1791892800,
+        source_name="kernel",
     )
 
 
@@ -130,3 +131,8 @@ def test_kmod_provides_only_for_module_files() -> None:
     kmods = [d.name for d in edited.dep_list(DepKind.PROVIDE) if d.name.startswith("kmod(")]
     assert "kmod(extra)" not in kmods
     assert "kmod(zfs.ko)" in kmods
+
+
+def test_changelog_entry_names_the_source_package_for_subpackages() -> None:
+    first = apply_edits(load("f44-kernel-modules-extra"), ctx()).changelog[0]
+    assert first.text == "- Repackaged kernel-7.2.9-200.fc44 with OpenZFS 2.4.4 (zfs-2.4.4)"

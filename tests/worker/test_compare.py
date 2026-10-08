@@ -125,3 +125,27 @@ def test_config_origin_bit_is_masked() -> None:
         Dependency("config(k)", SENSE_EQUAL, "1"),
     )
     assert diff_headers(replace(header, deps=deps), replace(header, deps=actual_deps)) == []
+
+
+def test_metadata_differences_reported() -> None:
+    header = load("f44-kernel-core")
+    actual = replace(header, summary="other", description="cut", license="MIT", url="https://x")
+    diffs = diff_headers(header, actual)
+    assert "kernel-core: summary: expected 'The Linux kernel', got 'other'" in diffs
+    assert any(d.startswith("kernel-core: description:") for d in diffs)
+    assert any(d.startswith("kernel-core: license:") for d in diffs)
+    assert any(d.startswith("kernel-core: url:") for d in diffs)
+
+
+def test_changelog_differences_reported_and_star_lines_normalized() -> None:
+    header = load("f44-kernel")
+    first = header.changelog[0]
+    starred = replace(first, text="- a\n* star")
+    expected = replace(header, changelog=(starred, *header.changelog[1:]))
+    rebuilt = replace(starred, text="- a\n * star", time=first.time // 86400 * 86400 + 43200)
+    assert diff_headers(expected, replace(header, changelog=(rebuilt, *header.changelog[1:]))) == []
+    truncated = replace(starred, text="- a")
+    diffs = diff_headers(expected, replace(header, changelog=(truncated, *header.changelog[1:])))
+    assert diffs == ["kernel: changelog entry 1 differs"]
+    shorter = replace(header, changelog=header.changelog[1:])
+    assert "kernel: changelog has 2 entries, expected 3" in diff_headers(header, shorter)

@@ -32,6 +32,7 @@ class EditContext:
     role: Role | None
     injected: tuple[FileEntry, ...]
     changelog_time: int
+    source_name: str  # all packages share the spec's changelog, which names the source package
 
 
 def rewrite_dep_version(version: str, ctx: EditContext) -> str:
@@ -81,7 +82,7 @@ def apply_edits(header: Header, ctx: EditContext) -> Header:
         deps[kind] = (*deps.get(kind, ()), *added)
     files = (*header.files, *ctx.injected) if ctx.role == "modules" else header.files
     edited = replace(header, release=ctx.zefosa_release, packager=PACKAGER, deps=deps, files=files)
-    upstream_nevr = f"{header.name}-{header.evr}"
+    upstream_nevr = f"{ctx.source_name}-{header.evr}"
     entry = ChangelogEntry(
         time=ctx.changelog_time,
         name=f"{CHANGELOG_AUTHOR} - {edited.evr}",

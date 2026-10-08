@@ -216,6 +216,7 @@ def repackage(
             role=package.role,
             injected=injected,
             changelog_time=ctx.changelog_time,
+            source_name=packages[0].name,
         )
         expected.append(apply_edits(header, edit_ctx))
 

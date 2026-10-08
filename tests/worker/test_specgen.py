@@ -1,9 +1,12 @@
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
+from tests.worker.upstream import needs_rpmbuild
 from zefosator.errors import BuildError
+from zefosator.worker.compare import diff_headers
 from zefosator.worker.rpmheader import (
     FILE_CONFIG,
     FILE_GHOST,
@@ -24,6 +27,7 @@ from zefosator.worker.rpmheader import (
     Script,
     ScriptKind,
     parse_header_xml,
+    read_header,
 )
 from zefosator.worker.specgen import dependency_line, file_line, render_spec
 
@@ -243,3 +247,52 @@ def test_real_headers_render() -> None:
     assert "Requires(pre): dracut >= 027" in spec
     assert "%ghost %verify(not md5 size link mtime) %attr(0600,root,root)" in spec
     assert spec.count("%changelog") == 1
+
+
+def test_changelog_lines_starting_with_star_are_indented() -> None:
+    header = minimal(
+        changelog=(ChangelogEntry(time=1791892800, name="A <a@b> - 1", text="- a\n* star\n- b"),)
+    )
+    assert "- a\n * star\n- b" in render_spec(header, [])
+
+
+@needs_rpmbuild
+def test_star_changelog_lines_survive_rpmbuild(tmp_path: Path) -> None:
+    evr = "7.2.9-200.zefosa.fc44"
+    header = minimal(
+        group="Unspecified",
+        deps={
+            DepKind.PROVIDE: (
+                Dependency("kernel", SENSE_EQUAL, evr),
+                Dependency("kernel(x86-64)", SENSE_EQUAL, evr),
+            )
+        },
+        description="Line\n%%not a macro",
+        changelog=(
+            ChangelogEntry(time=1791892800, name="A <a@b> - 7.2.9-200", text="- a\n* star\n- 5%"),
+        ),
+    )
+    spec = tmp_path / "t.spec"
+    spec.write_text(render_spec(header, []))
+    (tmp_path / "root").mkdir()
+    subprocess.run(
+        [
+            "rpmbuild",
+            "-bb",
+            "--quiet",
+            "--target",
+            "x86_64",
+            "--define",
+            f"_topdir {tmp_path / 'top'}",
+            "--define",
+            f"_rpmdir {tmp_path / 'out'}",
+            "--define",
+            "_build_name_fmt %%{NAME}.rpm",
+            "--define",
+            f"_zefosa_root {tmp_path / 'root'}",
+            str(spec),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    assert diff_headers(header, read_header(tmp_path / "out" / "kernel.rpm")) == []
