@@ -18,7 +18,6 @@ from zefosator.worker.rpmheader import (
     FILE_NOREPLACE,
     FILE_README,
     SENSE_COMPARE,
-    SENSE_CONFIG,
     SENSE_EQUAL,
     SENSE_GENERATOR_ORIGIN,
     SENSE_GREATER,
@@ -110,7 +109,7 @@ _VERIFY_BITS = sum(bit for bit, _ in _VERIFY)
 _ISA = {"x86_64": "x86-64", "aarch64": "aarch-64", "ppc64le": "ppc-64", "s390x": "s390-64"}
 _UNSAFE_PATH_CHARS = frozenset('[]*?{}"\\% \t\n')
 # Dependencies rpmbuild generates itself; emitting them would duplicate or contradict them.
-_GENERATED = SENSE_INTERP | SENSE_RPMLIB | SENSE_CONFIG
+_GENERATED = SENSE_INTERP | SENSE_RPMLIB
 
 
 def escape(text: str) -> str:

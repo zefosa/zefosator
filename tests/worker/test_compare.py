@@ -93,3 +93,35 @@ def test_dependency_changes_reported() -> None:
     diffs = diff_headers(header, replace(header, deps=deps))
     assert "kernel-core: unexpected Conflict: zfs-dkms" in diffs
     assert any(d.startswith("kernel-core: missing Require: dracut") for d in diffs)
+
+
+def test_duplicate_dependencies_differing_only_in_origin_collapse() -> None:
+    header = load("f44-kernel-core")
+    deps = dict(header.deps)
+    deps[DepKind.PROVIDE] = (
+        *deps[DepKind.PROVIDE],
+        Dependency("kmod(dummy.ko)", 0, ""),
+        Dependency("kmod(dummy.ko)", SENSE_FIND_PROVIDES, ""),
+    )
+    expected = replace(header, deps=deps)
+    actual_deps = dict(header.deps)
+    actual_deps[DepKind.PROVIDE] = (
+        *header.deps[DepKind.PROVIDE],
+        Dependency("kmod(dummy.ko)", 0, ""),
+    )
+    assert diff_headers(expected, replace(header, deps=actual_deps)) == []
+
+
+def test_config_origin_bit_is_masked() -> None:
+    header = load("f44-kernel-core")
+    deps = dict(header.deps)
+    deps[DepKind.PROVIDE] = (
+        *deps[DepKind.PROVIDE],
+        Dependency("config(k)", SENSE_EQUAL | (1 << 28), "1"),
+    )
+    actual_deps = dict(header.deps)
+    actual_deps[DepKind.PROVIDE] = (
+        *header.deps[DepKind.PROVIDE],
+        Dependency("config(k)", SENSE_EQUAL, "1"),
+    )
+    assert diff_headers(replace(header, deps=deps), replace(header, deps=actual_deps)) == []

@@ -158,7 +158,7 @@ def test_spec_globals_and_payload() -> None:
     assert "\n%files\n" in spec
 
 
-def test_self_provides_and_generated_dependencies_are_omitted() -> None:
+def test_self_provides_and_regenerated_dependencies_are_omitted() -> None:
     header = minimal(
         deps={
             DepKind.PROVIDE: (
@@ -179,7 +179,7 @@ def test_self_provides_and_generated_dependencies_are_omitted() -> None:
     assert "Provides: kernel-x86_64 = 7.2.9-200.zefosa.fc44" in spec
     assert "Provides: kernel = " not in spec
     assert "Provides: kernel(x86-64)" not in spec
-    assert "config(kernel)" not in spec
+    assert "Provides: config(kernel) = 7.2.9-200.zefosa.fc44" in spec
     assert "/bin/sh" not in spec
     assert "rpmlib(" not in spec
 

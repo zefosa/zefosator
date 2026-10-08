@@ -2,6 +2,7 @@
 
 import posixpath
 import re
+import stat
 from dataclasses import dataclass, replace
 
 from zefosator.config import Role
@@ -59,7 +60,11 @@ def _role_additions(ctx: EditContext) -> dict[DepKind, tuple[Dependency, ...]]:
             DepKind.CONFLICT: (Dependency("zfs-dkms", 0, ""),),
         }
     if ctx.role == "modules":
-        kmods = tuple(Dependency(kmod_name(f.path), 0, "") for f in ctx.injected)
+        kmods = tuple(
+            Dependency(kmod_name(f.path), 0, "")
+            for f in ctx.injected
+            if stat.S_ISREG(f.mode) and ".ko" in posixpath.basename(f.path)
+        )
         return {
             DepKind.PROVIDE: (Dependency("zfs-kmod", SENSE_EQUAL, ctx.zfs_version), *kmods),
             DepKind.OBSOLETE: (Dependency(f"kmod-zfs-{ctx.uname_r}", 0, ""),),

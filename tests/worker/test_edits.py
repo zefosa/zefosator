@@ -122,3 +122,11 @@ def test_kmod_name_strips_compression_suffix() -> None:
     assert kmod_name("/lib/modules/x/extra/zfs/zfs.ko.xz") == "kmod(zfs.ko)"
     assert kmod_name("/lib/modules/x/extra/spl.ko") == "kmod(spl.ko)"
     assert kmod_name("/lib/modules/x/extra/spl.ko.zst") == "kmod(spl.ko)"
+
+
+def test_kmod_provides_only_for_module_files() -> None:
+    extra_dir = replace(ZFS_KO, path="/lib/modules/7.2.9-200.fc44.x86_64/extra", mode=0o40755)
+    edited = apply_edits(load("f44-kernel-modules-core"), ctx("modules", (extra_dir, ZFS_KO)))
+    kmods = [d.name for d in edited.dep_list(DepKind.PROVIDE) if d.name.startswith("kmod(")]
+    assert "kmod(extra)" not in kmods
+    assert "kmod(zfs.ko)" in kmods

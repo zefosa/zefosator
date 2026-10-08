@@ -1,7 +1,5 @@
 """Compare an expected (edited upstream) header with the header rpmbuild produced."""
 
-from collections import Counter
-
 from zefosator.worker.rpmheader import (
     SENSE_GENERATOR_ORIGIN,
     SENSE_INTERP,
@@ -55,12 +53,11 @@ def _describe(kind: DepKind, key: tuple[str, int, str]) -> str:
 def _diff_deps(name: str, expected: Header, actual: Header) -> list[str]:
     diffs = []
     for kind in DepKind:
-        want = Counter(_dep_key(d) for d in expected.dep_list(kind) if not d.flags & _REGENERATED)
-        got = Counter(_dep_key(d) for d in actual.dep_list(kind) if not d.flags & _REGENERATED)
-        diffs += [f"{name}: missing {_describe(kind, k)}" for k in sorted((want - got).elements())]
-        diffs += [
-            f"{name}: unexpected {_describe(kind, k)}" for k in sorted((got - want).elements())
-        ]
+        # Sets, not multisets: rpm merges dependencies that differ only in origin bits.
+        want = {_dep_key(d) for d in expected.dep_list(kind) if not d.flags & _REGENERATED}
+        got = {_dep_key(d) for d in actual.dep_list(kind) if not d.flags & _REGENERATED}
+        diffs += [f"{name}: missing {_describe(kind, k)}" for k in sorted(want - got)]
+        diffs += [f"{name}: unexpected {_describe(kind, k)}" for k in sorted(got - want)]
     return diffs
 
 
