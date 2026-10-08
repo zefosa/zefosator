@@ -72,8 +72,10 @@ modules() {
     grep -q 'extra/.*zfs\.ko' /lib/modules/{{ plan.uname_r | sh }}/modules.dep
 }
 
+# Rootless containers cannot set security.* xattrs (EL10 files carry IMA signatures); copying
+# them is irrelevant to whether the ZFS dracut module is included.
 initramfs() {
-    dracut --no-hostonly --force --kver {{ plan.uname_r | sh }} /tmp/initramfs.img || return 1
+    DRACUT_NO_XATTR=1 dracut --no-hostonly --force --kver {{ plan.uname_r | sh }} /tmp/initramfs.img || return 1
     lsinitrd -m /tmp/initramfs.img | grep -qw zfs || return 1
     lsinitrd /tmp/initramfs.img | grep -q 'zfs\.ko'
 }

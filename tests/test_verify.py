@@ -26,7 +26,10 @@ def test_script_contains_every_check() -> None:
     assert "dnf repoquery" not in script
     assert "687.52.1.zefosa.el9_8" in script
     assert "modinfo -k 5.14.0-687.52.1.el9_8.x86_64 -n zfs" in script
-    assert "dracut --no-hostonly --force --kver 5.14.0-687.52.1.el9_8.x86_64" in script
+    assert (
+        "DRACUT_NO_XATTR=1 dracut --no-hostonly --force --kver 5.14.0-687.52.1.el9_8.x86_64"
+        in script
+    )
     assert "lsinitrd -m" in script
     assert "rpm -V" in script
 
