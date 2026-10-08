@@ -53,7 +53,7 @@ def test_run_build_runs_stages_in_order(tmp_path: Path, monkeypatch: pytest.Monk
     devel = rpms["kernel-devel"]
     assert calls == [
         f"fetch {dirs.cache / 'downloads'}",
-        f"dnf install -y {devel}",
+        f"dnf install -y --enablerepo=crb --enablerepo=epel {devel}",
         f"zfs {dirs.output / 'zfs'}",
         f"repackage {len(PLAN.packages)} 687.52.1.zefosa.el9_8 {dirs.output / 'kernel'}",
         f"manifest {dirs.output / 'manifest.json'}",

@@ -3,7 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from zefosator import podman
 from zefosator.cli import main
+from zefosator.config import Plan
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -23,3 +25,15 @@ def test_config_error_exits_1_with_message(
     missing = tmp_path / "targets" / "nope.yaml"
     assert main(["plan", str(missing)]) == 1
     assert "nope.yaml: cannot read" in capsys.readouterr().err
+
+
+def test_build_runs_podman_build_with_project_root(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, Path]] = []
+
+    def fake_build(plan: Plan, root: Path) -> None:
+        calls.append((plan.zefosa_release, root))
+
+    monkeypatch.setattr(podman, "build", fake_build)
+    target = ROOT / "targets" / "almalinux-10-x86_64.yaml"
+    assert main(["build", str(target), "--buildid", "zefosa1"]) == 0
+    assert calls == [("211.56.1.zefosa1.el10_2", ROOT)]

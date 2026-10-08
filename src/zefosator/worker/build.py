@@ -46,7 +46,9 @@ def run_build(plan: Plan, dirs: WorkerDirs) -> None:
     rpms = fetch_all(plan, dirs.cache / "downloads")
 
     _banner(2, "Install kernel-devel")
-    run(["dnf", "install", "-y", str(rpms[plan.role("devel").name])], log=logs / "dnf.log")
+    repos = [f"--enablerepo={repo}" for repo in plan.image.enable_repos]
+    devel = rpms[plan.role("devel").name]
+    run(["dnf", "install", "-y", *repos, str(devel)], log=logs / "dnf.log")
 
     _banner(3, f"Build OpenZFS {plan.zfs.version} ({plan.zfs.tag})")
     zfs = build_zfs(

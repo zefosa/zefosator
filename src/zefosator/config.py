@@ -252,9 +252,14 @@ def _check_roles(settings: VendorSettings, source: Path) -> None:
             raise ConfigError(msg)
 
 
+def project_root(target_path: Path) -> Path:
+    """Targets live in <root>/targets/; vendors, patches, cache and output are under <root>."""
+    return target_path.resolve().parent.parent
+
+
 def load_plan(target_path: Path, *, buildid: str | None = None) -> Plan:
     """Load a target file and its vendor profile and resolve every value."""
-    root = target_path.resolve().parent.parent
+    root = project_root(target_path)
     target = _load_target(target_path)
     vendor_path = root / "vendors" / f"{target.vendor}.yaml"
     if not vendor_path.is_file():
