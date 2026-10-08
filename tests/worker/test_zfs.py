@@ -90,7 +90,18 @@ def test_build_zfs_command_sequence_and_outputs(tmp_path: Path) -> None:
     assert ["sh", "autogen.sh"] in runner.commands
     configure = next(c for c in runner.commands if c[0] == "./configure")
     assert f"--with-linux=/usr/src/kernels/{UNAME}" in configure
+    builddep = next(c for c in runner.commands if c[:2] == ["dnf", "builddep"])
+    assert builddep == [
+        "dnf",
+        "builddep",
+        "-y",
+        "--enablerepo=crb",
+        "--enablerepo=epel",
+        "rpm/generic/zfs.spec",
+    ]
+    assert runner.commands.index(configure) < runner.commands.index(builddep)
     make = next(c for c in runner.commands if c[0] == "make")
+    assert runner.commands.index(builddep) < runner.commands.index(make)
     assert make[-2:] == ["rpm-utils", "rpm-kmod"]
     assert "Version:       2.3.9\n" in runner.meta_at_make
     assert "Release:       0\n" in runner.meta_at_make

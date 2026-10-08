@@ -112,6 +112,9 @@ def build_zfs(plan: Plan, paths: ZfsPaths, *, runner: Runner = run) -> ZfsResult
         cwd=src,
         log=log,
     )
+    # OpenZFS's own spec is the authority on its userspace build dependencies.
+    repos = [f"--enablerepo={repo}" for repo in plan.image.enable_repos]
+    runner(["dnf", "builddep", "-y", *repos, "rpm/generic/zfs.spec"], cwd=src, log=log)
     runner(["make", "-s", f"-j{os.cpu_count() or 2}", "rpm-utils", "rpm-kmod"], cwd=src, log=log)
 
     kmod_name = f"kmod-zfs-{plan.uname_r}"
