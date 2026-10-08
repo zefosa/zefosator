@@ -1,0 +1,159 @@
+<rpmHeader>
+  <rpmTag name="Headeri18ntable">
+	<string>C</string>
+  </rpmTag>
+  <rpmTag name="Sigsize">
+	<integer>242549</integer>
+  </rpmTag>
+  <rpmTag name="Sigmd5">
+	<base64>N6Lpxb25XOpmIcwgPJPe6A==
+</base64>
+  </rpmTag>
+  <rpmTag name="Sha1header">
+	<string>5067c806837439b3e96b397ef5115f0405eb6782</string>
+  </rpmTag>
+  <rpmTag name="Sha256header">
+	<string>781cf04e8efbe65aac7aba6ad8f27dd6af02d12972d94f3a1c4916f08964c6a2</string>
+  </rpmTag>
+  <rpmTag name="Name">
+	<string>kernel-devel-matched</string>
+  </rpmTag>
+  <rpmTag name="Version">
+	<string>7.2.9</string>
+  </rpmTag>
+  <rpmTag name="Release">
+	<string>200.fc44</string>
+  </rpmTag>
+  <rpmTag name="Summary">
+	<string>Meta package to install matching core and devel packages for a given kernel</string>
+  </rpmTag>
+  <rpmTag name="Description">
+	<string>This meta package is used to install matching core and devel packages for a given kernel.</string>
+  </rpmTag>
+  <rpmTag name="Buildtime">
+	<integer>1791056615</integer>
+  </rpmTag>
+  <rpmTag name="Buildhost">
+	<string>buildhw-x86-01.rdu3.fedoraproject.org</string>
+  </rpmTag>
+  <rpmTag name="Size">
+	<integer>0</integer>
+  </rpmTag>
+  <rpmTag name="Distribution">
+	<string>Fedora Project</string>
+  </rpmTag>
+  <rpmTag name="Vendor">
+	<string>Fedora Project</string>
+  </rpmTag>
+  <rpmTag name="License">
+	<string>((GPL-2.0-only WITH Linux-syscall-note) OR CDDL-1.0) AND ((GPL-2.0-only WITH Linux-syscall-note) OR Linux-OpenIB) AND 0BSD AND Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND BSD-3-Clause-Clear AND CC0-1.0 AND GFDL-1.1-no-invariants-or-later AND GPL-1.0-or-later AND (GPL-1.0-or-later WITH Linux-syscall-note) AND GPL-2.0-only AND (GPL-2.0-only OR CDDL-1.0) AND (GPL-2.0-only OR GFDL-1.2-no-invariants-only) AND (GPL-2.0-only OR GFDL-1.2-no-invariants-or-later) AND (GPL-2.0-only WITH Linux-syscall-note) AND GPL-2.0-or-later AND (GPL-2.0-or-later OR CC-BY-4.0) AND (GPL-2.0-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH Linux-syscall-note) AND ISC AND LGPL-2.0-or-later AND (LGPL-2.0-or-later WITH Linux-syscall-note) AND LGPL-2.1-only AND (LGPL-2.1-only WITH Linux-syscall-note) AND LGPL-2.1-or-later AND (LGPL-2.1-or-later WITH Linux-syscall-note) AND (Linux-OpenIB OR GPL-2.0-only) AND (Linux-OpenIB OR GPL-2.0-only OR BSD-2-Clause) AND Linux-man-pages-copyleft AND MIT AND (MPL-1.1 OR GPL-2.0-only) AND (X11 OR GPL-2.0-only) AND (X11 OR GPL-2.0-or-later) AND Zlib AND (copyleft-next-0.3.1 OR GPL-2.0-or-later)</string>
+  </rpmTag>
+  <rpmTag name="Packager">
+	<string>Fedora Project</string>
+  </rpmTag>
+  <rpmTag name="Group">
+	<string>Unspecified</string>
+  </rpmTag>
+  <rpmTag name="Url">
+	<string>https://www.kernel.org/</string>
+  </rpmTag>
+  <rpmTag name="Os">
+	<string>linux</string>
+  </rpmTag>
+  <rpmTag name="Arch">
+	<string>x86_64</string>
+  </rpmTag>
+  <rpmTag name="Sourcerpm">
+	<string>kernel-7.2.9-200.fc44.src.rpm</string>
+  </rpmTag>
+  <rpmTag name="Archivesize">
+	<integer>124</integer>
+  </rpmTag>
+  <rpmTag name="Providename">
+	<string>kernel-devel-matched</string>
+	<string>kernel-devel-matched(x86-64)</string>
+  </rpmTag>
+  <rpmTag name="Requireflags">
+	<integer>8</integer>
+	<integer>8</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+  </rpmTag>
+  <rpmTag name="Requirename">
+	<string>kernel-core</string>
+	<string>kernel-devel</string>
+	<string>rpmlib(CompressedFileNames)</string>
+	<string>rpmlib(FileDigests)</string>
+	<string>rpmlib(PayloadFilesHavePrefix)</string>
+	<string>rpmlib(PayloadIsXz)</string>
+  </rpmTag>
+  <rpmTag name="Requireversion">
+	<string>7.2.9-200.fc44</string>
+	<string>7.2.9-200.fc44</string>
+	<string>3.0.4-1</string>
+	<string>4.6.0-1</string>
+	<string>4.0-1</string>
+	<string>5.2-1</string>
+  </rpmTag>
+  <rpmTag name="Rpmversion">
+	<string>6.0.2</string>
+  </rpmTag>
+  <rpmTag name="Changelogtime">
+	<integer>1790337600</integer>
+	<integer>1787918400</integer>
+	<integer>1786363200</integer>
+	</rpmTag>
+  <rpmTag name="Changelogname">
+	<string>Augusto Caringi &lt;acaringi@redhat.com&gt; [7.2.8-0]</string>
+	<string>Justin M. Forbes &lt;jforbes@fedoraproject.org&gt; [7.2.2-0]</string>
+	<string>Fedora Kernel Team &lt;kernel-team@fedoraproject.org&gt; [7.2.0-0.rc7.53]</string>
+	</rpmTag>
+  <rpmTag name="Changelogtext">
+	<string>- Linux v7.2.8</string>
+	<string>- Linux v7.2.2</string>
+	<string>- Linux v7.2.0-0.rc7</string>
+	</rpmTag>
+  <rpmTag name="Provideflags">
+	<integer>8</integer>
+	<integer>8</integer>
+  </rpmTag>
+  <rpmTag name="Provideversion">
+	<string>7.2.9-200.fc44</string>
+	<string>7.2.9-200.fc44</string>
+  </rpmTag>
+  <rpmTag name="Optflags">
+	<string>-O2  -fexceptions -g -grecord-gcc-switches -pipe -Wall -Wno-complain-wrong-lang -Werror=format-security -Wp,-U_FORTIFY_SOURCE,-D_FORTIFY_SOURCE=3 -Wp,-D_GLIBCXX_ASSERTIONS -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -fstack-protector-strong -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1  -m64 -march=x86-64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection -mtls-dialect=gnu2  </string>
+  </rpmTag>
+  <rpmTag name="Payloadformat">
+	<string>cpio</string>
+  </rpmTag>
+  <rpmTag name="Payloadcompressor">
+	<string>xz</string>
+  </rpmTag>
+  <rpmTag name="Payloadflags">
+	<string>3T</string>
+  </rpmTag>
+  <rpmTag name="Platform">
+	<string>x86_64-redhat-linux-gnu</string>
+  </rpmTag>
+  <rpmTag name="Filedigestalgo">
+	<integer>8</integer>
+  </rpmTag>
+  <rpmTag name="Bugurl">
+	<string>https://bugz.fedoraproject.org/kernel</string>
+  </rpmTag>
+  <rpmTag name="Encoding">
+	<string>utf-8</string>
+  </rpmTag>
+  <rpmTag name="Payloadsha256">
+	<string>e04ca62b73a902f5546e565600bbc0027e7b011fb79d210f0f27f741b93a2cc9</string>
+  </rpmTag>
+  <rpmTag name="Payloadsha256algo">
+	<integer>8</integer>
+  </rpmTag>
+  <rpmTag name="Payloadsha256alt">
+	<string>23d0422b4fea28f771e872741bb370790b3cd0538eafb461233e820b84b57a2e</string>
+  </rpmTag>
+</rpmHeader>

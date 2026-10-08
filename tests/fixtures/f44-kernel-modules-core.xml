@@ -1,0 +1,744 @@
+<rpmHeader>
+  <rpmTag name="Headeri18ntable">
+	<string>C</string>
+  </rpmTag>
+  <rpmTag name="Sigsize">
+	<integer>50466429</integer>
+  </rpmTag>
+  <rpmTag name="Sigmd5">
+	<base64>ydb/2XXuk4TD7n7eZepwcA==
+</base64>
+  </rpmTag>
+  <rpmTag name="Sha1header">
+	<string>2c23dca184efa0acd6d8e926b8fbc9b49280ea92</string>
+  </rpmTag>
+  <rpmTag name="Sha256header">
+	<string>1b7d586b52228d0d5b710087599d8274dc84118dca400f89fcae4d029ed0ffe7</string>
+  </rpmTag>
+  <rpmTag name="Name">
+	<string>kernel-modules-core</string>
+  </rpmTag>
+  <rpmTag name="Version">
+	<string>7.2.9</string>
+  </rpmTag>
+  <rpmTag name="Release">
+	<string>200.fc44</string>
+  </rpmTag>
+  <rpmTag name="Summary">
+	<string>Core kernel modules to match the core kernel</string>
+  </rpmTag>
+  <rpmTag name="Description">
+	<string>This package provides essential kernel modules for the core kernel package.</string>
+  </rpmTag>
+  <rpmTag name="Buildtime">
+	<integer>1791056615</integer>
+  </rpmTag>
+  <rpmTag name="Buildhost">
+	<string>buildhw-x86-01.rdu3.fedoraproject.org</string>
+  </rpmTag>
+  <rpmTag name="Size">
+	<integer>49248628</integer>
+  </rpmTag>
+  <rpmTag name="Distribution">
+	<string>Fedora Project</string>
+  </rpmTag>
+  <rpmTag name="Vendor">
+	<string>Fedora Project</string>
+  </rpmTag>
+  <rpmTag name="License">
+	<string>((GPL-2.0-only WITH Linux-syscall-note) OR CDDL-1.0) AND ((GPL-2.0-only WITH Linux-syscall-note) OR Linux-OpenIB) AND 0BSD AND Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND BSD-3-Clause-Clear AND CC0-1.0 AND GFDL-1.1-no-invariants-or-later AND GPL-1.0-or-later AND (GPL-1.0-or-later WITH Linux-syscall-note) AND GPL-2.0-only AND (GPL-2.0-only OR CDDL-1.0) AND (GPL-2.0-only OR GFDL-1.2-no-invariants-only) AND (GPL-2.0-only OR GFDL-1.2-no-invariants-or-later) AND (GPL-2.0-only WITH Linux-syscall-note) AND GPL-2.0-or-later AND (GPL-2.0-or-later OR CC-BY-4.0) AND (GPL-2.0-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH Linux-syscall-note) AND ISC AND LGPL-2.0-or-later AND (LGPL-2.0-or-later WITH Linux-syscall-note) AND LGPL-2.1-only AND (LGPL-2.1-only WITH Linux-syscall-note) AND LGPL-2.1-or-later AND (LGPL-2.1-or-later WITH Linux-syscall-note) AND (Linux-OpenIB OR GPL-2.0-only) AND (Linux-OpenIB OR GPL-2.0-only OR BSD-2-Clause) AND Linux-man-pages-copyleft AND MIT AND (MPL-1.1 OR GPL-2.0-only) AND (X11 OR GPL-2.0-only) AND (X11 OR GPL-2.0-or-later) AND Zlib AND (copyleft-next-0.3.1 OR GPL-2.0-or-later)</string>
+  </rpmTag>
+  <rpmTag name="Packager">
+	<string>Fedora Project</string>
+  </rpmTag>
+  <rpmTag name="Group">
+	<string>Unspecified</string>
+  </rpmTag>
+  <rpmTag name="Url">
+	<string>https://www.kernel.org/</string>
+  </rpmTag>
+  <rpmTag name="Os">
+	<string>linux</string>
+  </rpmTag>
+  <rpmTag name="Arch">
+	<string>x86_64</string>
+  </rpmTag>
+  <rpmTag name="Filesizes">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>38</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>6292</integer>
+	<integer>5896</integer>
+	<integer>8520</integer>
+	<integer>8984</integer>
+	<integer>14388</integer>
+	<integer>9280</integer>
+	<integer>11140</integer>
+	<integer>14324</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>5</integer>
+	<integer>920</integer>
+  </rpmTag>
+  <rpmTag name="Filemodes">
+	<integer>16877</integer>
+	<integer>16877</integer>
+	<integer>41471</integer>
+	<integer>16877</integer>
+	<integer>16877</integer>
+	<integer>16877</integer>
+	<integer>16877</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>16877</integer>
+	<integer>16877</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>41471</integer>
+	<integer>33188</integer>
+  </rpmTag>
+  <rpmTag name="Filerdevs">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+  </rpmTag>
+  <rpmTag name="Filemtimes">
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+	<integer>1790985600</integer>
+  </rpmTag>
+  <rpmTag name="Filedigests">
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string>037af01d00abfcdd93f135820e9f75587e36ef9765f4285a5f89861ab25f32e7</string>
+	<string>175141a92c9fca3007f39ec83655025cf546733c510c2346dd807a74b3fbeb11</string>
+	<string>ad0e29270bb6dea298e2efef8a0463ee13f933ba3ebb8ecae976125fa625b820</string>
+	<string>ace3982da21ff86d7d3affea002ba6b6e80d91e3b601d4095c646158352217fb</string>
+	<string>c12b57f9c258c2c7f90043abc160867bef56816782dd52054befcb6092289774</string>
+	<string>e32691acfe6b4e63ba86ce9f19816488fd0ade685715c1f783058e1e891667c9</string>
+	<string>46d93bd9e992de7ba289ebfd5f91ee5f9f41dbd0f5df458acaf07daf62103ff4</string>
+	<string>ef917e908bc14c861f3c83dfe12a4877c5515c56b86728f4df311a692816bb20</string>
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string>40175d4c7c5ab4bd753a493f47952f1d8dcf1c219b836968a693e48bd4766135</string>
+  </rpmTag>
+  <rpmTag name="Filelinktos">
+	<string />
+	<string />
+	<string>/usr/src/kernels/7.2.9-200.fc44.x86_64</string>
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string>build</string>
+	<string />
+  </rpmTag>
+  <rpmTag name="Fileflags">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>0</integer>
+	<integer>2</integer>
+  </rpmTag>
+  <rpmTag name="Fileusername">
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+  </rpmTag>
+  <rpmTag name="Filegroupname">
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+  </rpmTag>
+  <rpmTag name="Sourcerpm">
+	<string>kernel-7.2.9-200.fc44.src.rpm</string>
+  </rpmTag>
+  <rpmTag name="Fileverifyflags">
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+  </rpmTag>
+  <rpmTag name="Archivesize">
+	<integer>49873012</integer>
+  </rpmTag>
+  <rpmTag name="Providename">
+	<string>installonlypkg(kernel-module)</string>
+	<string>kernel-modules-core</string>
+	<string>kernel-modules-core(x86-64)</string>
+	<string>kernel-modules-core-uname-r</string>
+	<string>kernel-modules-core-x86_64</string>
+	<string>kmod(3w-9xxx.ko)</string>
+	<string>kmod(3w-sas.ko)</string>
+	<string>kmod(3w-xxxx.ko)</string>
+	<string>kmod(8021q.ko)</string>
+	<string>kmod(8139cp.ko)</string>
+	</rpmTag>
+  <rpmTag name="Requireflags">
+	<integer>288</integer>
+	<integer>8</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+  </rpmTag>
+  <rpmTag name="Requirename">
+	<string>/bin/sh</string>
+	<string>kernel-uname-r</string>
+	<string>rpmlib(CompressedFileNames)</string>
+	<string>rpmlib(FileDigests)</string>
+	<string>rpmlib(PayloadFilesHavePrefix)</string>
+	<string>rpmlib(PayloadIsXz)</string>
+  </rpmTag>
+  <rpmTag name="Requireversion">
+	<string />
+	<string>7.2.9-200.fc44.x86_64</string>
+	<string>3.0.4-1</string>
+	<string>4.6.0-1</string>
+	<string>4.0-1</string>
+	<string>5.2-1</string>
+  </rpmTag>
+  <rpmTag name="Rpmversion">
+	<string>6.0.2</string>
+  </rpmTag>
+  <rpmTag name="Changelogtime">
+	<integer>1790337600</integer>
+	<integer>1787918400</integer>
+	<integer>1786363200</integer>
+	</rpmTag>
+  <rpmTag name="Changelogname">
+	<string>Augusto Caringi &lt;acaringi@redhat.com&gt; [7.2.8-0]</string>
+	<string>Justin M. Forbes &lt;jforbes@fedoraproject.org&gt; [7.2.2-0]</string>
+	<string>Fedora Kernel Team &lt;kernel-team@fedoraproject.org&gt; [7.2.0-0.rc7.53]</string>
+	</rpmTag>
+  <rpmTag name="Changelogtext">
+	<string>- Linux v7.2.8</string>
+	<string>- Linux v7.2.2</string>
+	<string>- Linux v7.2.0-0.rc7</string>
+	</rpmTag>
+  <rpmTag name="Filedevices">
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+  </rpmTag>
+  <rpmTag name="Fileinodes">
+	<integer>1</integer>
+	<integer>2</integer>
+	<integer>3</integer>
+	<integer>4</integer>
+	<integer>5</integer>
+	<integer>6</integer>
+	<integer>7</integer>
+	<integer>8</integer>
+	<integer>9</integer>
+	<integer>10</integer>
+	<integer>11</integer>
+	<integer>12</integer>
+	<integer>13</integer>
+	<integer>14</integer>
+	<integer>15</integer>
+	<integer>21</integer>
+	<integer>22</integer>
+	<integer>3377</integer>
+	<integer>3378</integer>
+	<integer>3380</integer>
+	<integer>3381</integer>
+	<integer>3382</integer>
+	<integer>3383</integer>
+	<integer>3384</integer>
+	<integer>3389</integer>
+	<integer>3390</integer>
+	<integer>3391</integer>
+	<integer>3392</integer>
+	<integer>3393</integer>
+	<integer>3401</integer>
+  </rpmTag>
+  <rpmTag name="Filelangs">
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+  </rpmTag>
+  <rpmTag name="Provideflags">
+	<integer>0</integer>
+	<integer>8</integer>
+	<integer>8</integer>
+	<integer>8</integer>
+	<integer>8</integer>
+	<integer>32768</integer>
+	<integer>32768</integer>
+	<integer>32768</integer>
+	<integer>32768</integer>
+	<integer>32768</integer>
+	</rpmTag>
+  <rpmTag name="Provideversion">
+	<string />
+	<string>7.2.9-200.fc44</string>
+	<string>7.2.9-200.fc44</string>
+	<string>7.2.9-200.fc44.x86_64</string>
+	<string>7.2.9-200.fc44</string>
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	</rpmTag>
+  <rpmTag name="Dirindexes">
+	<integer>0</integer>
+	<integer>1</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>3</integer>
+	<integer>4</integer>
+	<integer>5</integer>
+	<integer>6</integer>
+	<integer>6</integer>
+	<integer>6</integer>
+	<integer>6</integer>
+	<integer>6</integer>
+	<integer>6</integer>
+	<integer>6</integer>
+	<integer>6</integer>
+	<integer>5</integer>
+	<integer>7</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>8</integer>
+  </rpmTag>
+  <rpmTag name="Basenames">
+	<string>modules</string>
+	<string>7.2.9-200.fc44.x86_64</string>
+	<string>build</string>
+	<string>kernel</string>
+	<string>arch</string>
+	<string>x86</string>
+	<string>crypto</string>
+	<string>aegis128-aesni.ko.xz</string>
+	<string>blowfish-x86_64.ko.xz</string>
+	<string>camellia-aesni-avx-x86_64.ko.xz</string>
+	<string>camellia-aesni-avx2.ko.xz</string>
+	<string>camellia-x86_64.ko.xz</string>
+	<string>cast5-avx-x86_64.ko.xz</string>
+	<string>cast6-avx-x86_64.ko.xz</string>
+	<string>serpent-avx-x86_64.ko.xz</string>
+	<string>events</string>
+	<string>amd</string>
+	<string>modules.alias</string>
+	<string>modules.alias.bin</string>
+	<string>modules.builtin.alias.bin</string>
+	<string>modules.builtin.bin</string>
+	<string>modules.dep</string>
+	<string>modules.dep.bin</string>
+	<string>modules.devname</string>
+	<string>modules.softdep</string>
+	<string>modules.symbols</string>
+	<string>modules.symbols.bin</string>
+	<string>modules.weakdep</string>
+	<string>source</string>
+	<string>kernel-signing-ca.cer</string>
+  </rpmTag>
+  <rpmTag name="Dirnames">
+	<string>/lib/</string>
+	<string>/lib/modules/</string>
+	<string>/lib/modules/7.2.9-200.fc44.x86_64/</string>
+	<string>/lib/modules/7.2.9-200.fc44.x86_64/kernel/</string>
+	<string>/lib/modules/7.2.9-200.fc44.x86_64/kernel/arch/</string>
+	<string>/lib/modules/7.2.9-200.fc44.x86_64/kernel/arch/x86/</string>
+	<string>/lib/modules/7.2.9-200.fc44.x86_64/kernel/arch/x86/crypto/</string>
+	<string>/lib/modules/7.2.9-200.fc44.x86_64/kernel/arch/x86/events/</string>
+	<string>/usr/share/doc/kernel-keys/7.2.9-200.fc44.x86_64/</string>
+  </rpmTag>
+  <rpmTag name="Optflags">
+	<string>-O2  -fexceptions -g -grecord-gcc-switches -pipe -Wall -Wno-complain-wrong-lang -Werror=format-security -Wp,-U_FORTIFY_SOURCE,-D_FORTIFY_SOURCE=3 -Wp,-D_GLIBCXX_ASSERTIONS -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -fstack-protector-strong -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1  -m64 -march=x86-64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection -mtls-dialect=gnu2  </string>
+  </rpmTag>
+  <rpmTag name="Payloadformat">
+	<string>cpio</string>
+  </rpmTag>
+  <rpmTag name="Payloadcompressor">
+	<string>xz</string>
+  </rpmTag>
+  <rpmTag name="Payloadflags">
+	<string>3T</string>
+  </rpmTag>
+  <rpmTag name="Platform">
+	<string>x86_64-redhat-linux-gnu</string>
+  </rpmTag>
+  <rpmTag name="Filecolors">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+  </rpmTag>
+  <rpmTag name="Fileclass">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>1</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+  </rpmTag>
+  <rpmTag name="Posttrans">
+	<string>/sbin/depmod -a 7.2.9-200.fc44.x86_64</string>
+  </rpmTag>
+  <rpmTag name="Posttransprog">
+	<string>/bin/sh</string>
+  </rpmTag>
+  <rpmTag name="Filedigestalgo">
+	<integer>8</integer>
+  </rpmTag>
+  <rpmTag name="Bugurl">
+	<string>https://bugz.fedoraproject.org/kernel</string>
+  </rpmTag>
+  <rpmTag name="Encoding">
+	<string>utf-8</string>
+  </rpmTag>
+  <rpmTag name="Payloadsha256">
+	<string>2bbcd38ef7de62dcd0c7a16e0f392abc8aed318c55e2f8f4a57fcea7e39d688d</string>
+  </rpmTag>
+  <rpmTag name="Payloadsha256algo">
+	<integer>8</integer>
+  </rpmTag>
+  <rpmTag name="Payloadsha256alt">
+	<string>9ac4e2b1a69ff0f424e9c9636328722a6964fff2a6b13838641e6e6718853710</string>
+  </rpmTag>
+</rpmHeader>

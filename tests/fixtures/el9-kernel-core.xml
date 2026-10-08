@@ -1,0 +1,649 @@
+<rpmHeader>
+  <rpmTag name="Headeri18ntable">
+	<string>C</string>
+  </rpmTag>
+  <rpmTag name="Sigsize">
+	<integer>18192481</integer>
+  </rpmTag>
+  <rpmTag name="Sigpgp">
+	<base64>iQIzBAABCAAdFiEEvxisKHYXiQjW5xJn02y4bLhrNxYFAmq7llEACgkQ02y4bLhr
+NxZQZQ//di5lTRpobn8/axinaEA11UavIfv4Cloh4xkZWUfzUr4ICjqZfw3G9a39
+0mjoXifLE5JMGKFXvblvqsfw+er1BJ06cdC+KASjDLjW01PYFJayRwHthjH1Cbjx
+wW4tROmpAtt8snp7jCrdjlh5FwgTLaDcQTM+03axrcw4APu0Z37tX1aQB0HRLvbo
+8BPYBYhNHd2ZEOqBtQlsHMsQukTmxtfz0KT8kmpIsg6ZDX+fug/RF0v5wJD5zmsP
+OpG3ykePGHkHA7LrSZcQnTve2aOYgx9EJIZ1azyFNX4tD6gCHz7UOW/dU8JjSWBI
+JVqm7PRlIDsdoHAz1/eFOJXIMSzStoHPe6/uZ/6uL7fVUoXWfrwskM42iGqDkmrf
+0lhNwsStqnZhQm+iHLxf5G7z3H3jzaYke7L8sKshNh+Iy2YMLAguh0zZ7IvduXsN
+8MiTtR11XAWcedLBzbdeesfK0lGmtCaPSdajvANUmXBnprfXONqh4zPuHYBN4D3D
+FMx8n9qL/whRzUf3hbTC/MWuHuhHJmLMAdXVb9rukhr3uWZun5Mnr1UTeg/sK+FY
+ZTTl/FSQ1kJysj9uoxq9S+4ytctrJmLA3FeyMao8+NnEB9+0YPef5cJQBAkDgX5I
+LuHzKkVEcWnDh0wQ4lFewalVfqEJfKO2o6loYvsVN/E6ALBSXTw=
+</base64>
+  </rpmTag>
+  <rpmTag name="Sigmd5">
+	<base64>i3tOrgSv3EiqRBSle+M+Dw==
+</base64>
+  </rpmTag>
+  <rpmTag name="Rsaheader">
+	<base64>iQIzBAABCAAdFiEEvxisKHYXiQjW5xJn02y4bLhrNxYFAmq7llEACgkQ02y4bLhr
+NxZmpBAAnWDVkqkrpBH/sqV43xBqvVDoHYKYzdjKR3G0KYoDMv09Gyxz8hUhiLkl
+2WvvYjxc3o+l00GWU0yE2/vi4euy8pe+ztOuaFUGer6fSwvkRnsNx9T3lOVz6sgb
+1CcAScyQy9tn3M3/vULhW9NBqBjXoiKRIfVW4Rji6hO95PJI+XSuloJJcFDXOpkU
+iP2LFWGpdkI3YJnqbfEWLH0iqpE4lB03MKlVJvYlCFBmBCdpUd67Jhz8zzR9VR5a
+V+Hpgqg4xvda13VzpCzYHSlP9URerpwpv4Q1j7CuyWUjJPSsxowB2hqI8vHUe4dP
+jO2DsYZQ+oeGAfQ5QXEydgK57blrcwwity+nfRg1vq/6WbIka/k+UWiEZ39yo0LN
+NnMkycQiarZqU9QdOdMdPezQgM+i22rYFFt4fM7XLhgyWDC5AS4QJ67Lmj7ZPxeK
+sQ9qW/WlX9TNoeiLDrCLASK/yeSxx8cpOWIJV5sjY6yKwrLDMYBHi6D783RmYucy
+X1RvWxN6T3nw27GV/CVQ4pLqOye6y5oIhSGSuQpjHD7tn1tRubSyDb1GQULnoCEt
+MLvqAfQP535b1YgzxdB/o6QP348wnFPkRBWQb2yJg1uHSZL6pAtfQVbfKiesubKF
+ZRw0oslstJRSO08tBuqX7V6P3KKIva2kF2inMh3ryAcmq5cmZwQ=
+</base64>
+  </rpmTag>
+  <rpmTag name="Sha1header">
+	<string>8190a2093ab2969dcf08713f578ca482aac108ab</string>
+  </rpmTag>
+  <rpmTag name="Sha256header">
+	<string>c140f03e9a102e5d1b0ecfc5b09f9256acb48ed7a95151086301266771125a7d</string>
+  </rpmTag>
+  <rpmTag name="Name">
+	<string>kernel-core</string>
+  </rpmTag>
+  <rpmTag name="Version">
+	<string>5.14.0</string>
+  </rpmTag>
+  <rpmTag name="Release">
+	<string>687.52.1.el9_8</string>
+  </rpmTag>
+  <rpmTag name="Summary">
+	<string>The Linux kernel</string>
+  </rpmTag>
+  <rpmTag name="Description">
+	<string>The kernel package contains the Linux kernel (vmlinuz), the core of any
+Linux operating system.  The kernel handles the basic functions
+of the operating system: memory allocation, process allocation, device
+input and output, etc.</string>
+  </rpmTag>
+  <rpmTag name="Buildtime">
+	<integer>1790670713</integer>
+  </rpmTag>
+  <rpmTag name="Buildhost">
+	<string>x64-builder02.almalinux.org</string>
+  </rpmTag>
+  <rpmTag name="Size">
+	<integer>71685851</integer>
+  </rpmTag>
+  <rpmTag name="Distribution">
+	<string>AlmaLinux</string>
+  </rpmTag>
+  <rpmTag name="Vendor">
+	<string>AlmaLinux</string>
+  </rpmTag>
+  <rpmTag name="License">
+	<string>((GPL-2.0-only WITH Linux-syscall-note) OR BSD-2-Clause) AND ((GPL-2.0-only WITH Linux-syscall-note) OR BSD-3-Clause) AND ((GPL-2.0-only WITH Linux-syscall-note) OR CDDL-1.0) AND ((GPL-2.0-only WITH Linux-syscall-note) OR Linux-OpenIB) AND ((GPL-2.0-only WITH Linux-syscall-note) OR MIT) AND ((GPL-2.0-or-later WITH Linux-syscall-note) OR BSD-3-Clause) AND ((GPL-2.0-or-later WITH Linux-syscall-note) OR MIT) AND Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND BSD-3-Clause-Clear AND GFDL-1.1-no-invariants-or-later AND GPL-1.0-or-later AND (GPL-1.0-or-later OR BSD-3-Clause) AND (GPL-1.0-or-later WITH Linux-syscall-note) AND GPL-2.0-only AND (GPL-2.0-only OR Apache-2.0) AND (GPL-2.0-only OR BSD-2-Clause) AND (GPL-2.0-only OR BSD-3-Clause) AND (GPL-2.0-only OR CDDL-1.0) AND (GPL-2.0-only OR GFDL-1.1-no-invariants-or-later) AND (GPL-2.0-only OR GFDL-1.2-no-invariants-only) AND (GPL-2.0-only WITH Linux-syscall-note) AND GPL-2.0-or-later AND (GPL-2.0-or-later OR BSD-2-Clause) AND (GPL-2.0-or-later OR BSD-3-Clause) AND (GPL-2.0-or-later OR CC-BY-4.0) AND (GPL-2.0-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH Linux-syscall-note) AND ISC AND LGPL-2.0-or-later AND (LGPL-2.0-or-later OR BSD-2-Clause) AND (LGPL-2.0-or-later WITH Linux-syscall-note) AND LGPL-2.1-only AND (LGPL-2.1-only OR BSD-2-Clause) AND (LGPL-2.1-only WITH Linux-syscall-note) AND LGPL-2.1-or-later AND (LGPL-2.1-or-later WITH Linux-syscall-note) AND (Linux-OpenIB OR GPL-2.0-only) AND (Linux-OpenIB OR GPL-2.0-only OR BSD-2-Clause) AND Linux-man-pages-copyleft AND MIT AND (MIT OR GPL-2.0-only) AND (MIT OR GPL-2.0-or-later) AND (MIT OR LGPL-2.1-only) AND (MPL-1.1 OR GPL-2.0-only) AND (X11 OR GPL-2.0-only) AND (X11 OR GPL-2.0-or-later) AND Zlib AND (copyleft-next-0.3.1 OR GPL-2.0-or-later)</string>
+  </rpmTag>
+  <rpmTag name="Packager">
+	<string>AlmaLinux Packaging Team &lt;packager@almalinux.org&gt;</string>
+  </rpmTag>
+  <rpmTag name="Group">
+	<string>Unspecified</string>
+  </rpmTag>
+  <rpmTag name="Url">
+	<string>https://www.kernel.org/</string>
+  </rpmTag>
+  <rpmTag name="Os">
+	<string>linux</string>
+  </rpmTag>
+  <rpmTag name="Arch">
+	<string>x86_64</string>
+  </rpmTag>
+  <rpmTag name="Postin">
+	<string>
+if [ `uname -i` == "x86_64" -o `uname -i` == "i386" ] &amp;&amp;
+   [ -f /etc/sysconfig/kernel ]; then
+  /bin/sed -r -i -e 's/^DEFAULTKERNEL=kernel-smp$/DEFAULTKERNEL=kernel/' /etc/sysconfig/kernel || exit $?
+fi
+mkdir -p /var/lib/rpm-state/kernel
+touch /var/lib/rpm-state/kernel/installing_core_5.14.0-687.52.1.el9_8.x86_64</string>
+  </rpmTag>
+  <rpmTag name="Preun">
+	<string>entry_type=""
+ 
+/bin/kernel-install --help|grep -q -- '--entry-type ' &amp;&amp;
+    entry_type="--entry-type type1" 
+
+/bin/kernel-install remove 5.14.0-687.52.1.el9_8.x86_64 $entry_type || exit $?
+if [ -x /usr/sbin/weak-modules ]
+then
+    /usr/sbin/weak-modules --remove-kernel 5.14.0-687.52.1.el9_8.x86_64 || exit $?
+fi</string>
+  </rpmTag>
+  <rpmTag name="Filesizes">
+	<integer>167</integer>
+	<integer>9554990</integer>
+	<integer>239840</integer>
+	<integer>20971520</integer>
+	<integer>330817</integer>
+	<integer>15186096</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>167</integer>
+	<integer>9554990</integer>
+	<integer>239840</integer>
+	<integer>9710</integer>
+	<integer>80305</integer>
+	<integer>330817</integer>
+	<integer>15186096</integer>
+	<integer>0</integer>
+	<integer>496</integer>
+  </rpmTag>
+  <rpmTag name="Filemodes">
+	<integer>33188</integer>
+	<integer>33152</integer>
+	<integer>33188</integer>
+	<integer>33152</integer>
+	<integer>33152</integer>
+	<integer>33261</integer>
+	<integer>16877</integer>
+	<integer>16877</integer>
+	<integer>33188</integer>
+	<integer>33152</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33188</integer>
+	<integer>33261</integer>
+	<integer>16877</integer>
+	<integer>33188</integer>
+  </rpmTag>
+  <rpmTag name="Filerdevs">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+  </rpmTag>
+  <rpmTag name="Filemtimes">
+	<integer>1790673628</integer>
+	<integer>1790673626</integer>
+	<integer>1790673626</integer>
+	<integer>1790673626</integer>
+	<integer>1790673637</integer>
+	<integer>1790673628</integer>
+	<integer>1790674756</integer>
+	<integer>1790673680</integer>
+	<integer>1790673628</integer>
+	<integer>1790673675</integer>
+	<integer>1790673675</integer>
+	<integer>1790673679</integer>
+	<integer>1790673679</integer>
+	<integer>1790673679</integer>
+	<integer>1790673679</integer>
+	<integer>1790676126</integer>
+	<integer>1790182430</integer>
+  </rpmTag>
+  <rpmTag name="Filedigests">
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string>3750dbae17b1aebcf6b46af32661358fa2e4dddd9dbeeb3bdec09396c00d3ec1</string>
+	<string>59e9d7421114a4a7e1450708863597ea8946229c1c09df69a19b59d8f046afbb</string>
+	<string>71ff966d5d68ecc075a72628bb8c4860130dfc3665218b051f60c3ec797ec134</string>
+	<string>161a895f16a1e33765691ca0cb8fdb65dd0843fe556f2538bcad67189e7e6b26</string>
+	<string>0d7aafa979a37fff5792b693784f503d245ae91273940ded33ed48ef639041ba</string>
+	<string>cc4d33c076c14aa0c825805d94f2a692cefdf0ede1e7d346599442e846e55cf6</string>
+	<string>d44af9bb3f25a31bdcf9ed3f724ffd3a76f5c9eef06df9b1fed1b453b48680a6</string>
+	<string />
+	<string>fb5a425bd3b3cd6071a3a9aff9909a859e7c1158d54d32e07658398cd67eb6a0</string>
+  </rpmTag>
+  <rpmTag name="Filelinktos">
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+  </rpmTag>
+  <rpmTag name="Fileflags">
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>64</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>128</integer>
+  </rpmTag>
+  <rpmTag name="Fileusername">
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+  </rpmTag>
+  <rpmTag name="Filegroupname">
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+	<string>root</string>
+  </rpmTag>
+  <rpmTag name="Sourcerpm">
+	<string>kernel-5.14.0-687.52.1.el9_8.src.rpm</string>
+  </rpmTag>
+  <rpmTag name="Fileverifyflags">
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967256</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+	<integer>4294967295</integer>
+  </rpmTag>
+  <rpmTag name="Archivesize">
+	<integer>25404328</integer>
+  </rpmTag>
+  <rpmTag name="Providename">
+	<string>almalinux(kernel-sig-key)</string>
+	<string>installonlypkg(kernel)</string>
+	<string>kernel</string>
+	<string>kernel(BUG_func)</string>
+	<string>kernel(IO_APIC_get_PCI_irq_vector)</string>
+	<string>kernel(I_BDEV)</string>
+	<string>kernel(LZ4_decompress_fast)</string>
+	<string>kernel-core</string>
+	<string>kernel-core(x86-64)</string>
+	<string>kernel-core-uname-r</string>
+	<string>kernel-uname-r</string>
+	<string>kernel-x86_64</string>
+	</rpmTag>
+  <rpmTag name="Requireflags">
+	<integer>512</integer>
+	<integer>288</integer>
+	<integer>1280</integer>
+	<integer>2304</integer>
+	<integer>512</integer>
+	<integer>512</integer>
+	<integer>524</integer>
+	<integer>8</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+	<integer>16777226</integer>
+	<integer>2060</integer>
+	<integer>524</integer>
+  </rpmTag>
+  <rpmTag name="Requirename">
+	<string>((linux-firmware &gt;= 20150904-56.git6ebf5d57) if linux-firmware)</string>
+	<string>/bin/sh</string>
+	<string>/bin/sh</string>
+	<string>/bin/sh</string>
+	<string>/usr/bin/kernel-install</string>
+	<string>coreutils</string>
+	<string>dracut</string>
+	<string>kernel-modules-core-uname-r</string>
+	<string>rpmlib(CompressedFileNames)</string>
+	<string>rpmlib(FileDigests)</string>
+	<string>rpmlib(PayloadFilesHavePrefix)</string>
+	<string>rpmlib(PayloadIsXz)</string>
+	<string>rpmlib(RichDependencies)</string>
+	<string>systemd</string>
+	<string>systemd</string>
+  </rpmTag>
+  <rpmTag name="Requireversion">
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string>027</string>
+	<string>5.14.0-687.52.1.el9_8.x86_64</string>
+	<string>3.0.4-1</string>
+	<string>4.6.0-1</string>
+	<string>4.0-1</string>
+	<string>5.2-1</string>
+	<string>4.12.0-1</string>
+	<string>200</string>
+	<string>203-2</string>
+  </rpmTag>
+  <rpmTag name="Conflictflags">
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+	<integer>2</integer>
+  </rpmTag>
+  <rpmTag name="Conflictname">
+	<string>shim</string>
+	<string>shim-ia32</string>
+	<string>shim-x64</string>
+	<string>xfsprogs</string>
+	<string>xorg-x11-drv-vmmouse</string>
+  </rpmTag>
+  <rpmTag name="Conflictversion">
+	<string>15.8-1</string>
+	<string>15.8-4.el9_3.alma.2</string>
+	<string>15.8-4.el9_3.alma.2</string>
+	<string>4.3.0-1</string>
+	<string>13.0.99</string>
+  </rpmTag>
+  <rpmTag name="Rpmversion">
+	<string>4.16.1.3</string>
+  </rpmTag>
+  <rpmTag name="Changelogtime">
+	<integer>1785240000</integer>
+	<integer>1784548800</integer>
+	<integer>1784030400</integer>
+	</rpmTag>
+  <rpmTag name="Changelogname">
+	<string>CKI KWF Bot &lt;cki-ci-bot+kwf-gitlab-com@redhat.com&gt; [5.14.0-687.32.1.el9_8]</string>
+	<string>CKI KWF Bot &lt;cki-ci-bot+kwf-gitlab-com@redhat.com&gt; [5.14.0-687.28.1.el9_8]</string>
+	<string>Jan Stancek &lt;jstancek@redhat.com&gt; [5.14.0-687.26.1.el9_8]</string>
+	</rpmTag>
+  <rpmTag name="Changelogtext">
+	<string>- tipc: fix double-free in tipc_buf_append() (CKI Backport Bot) [RHEL-192184] {CVE-2026-52993}</string>
+	<string>- fanotify: fix false positive on permission events (CKI Backport Bot) [RHEL-180073] {CVE-2026-46150}</string>
+	<string>- xfs: resample the data fork mapping after cycling ILOCK (Carlos Maiolino) [RHEL-193937]</string>
+	</rpmTag>
+  <rpmTag name="Postinprog">
+	<string>/bin/sh</string>
+  </rpmTag>
+  <rpmTag name="Preunprog">
+	<string>/bin/sh</string>
+  </rpmTag>
+  <rpmTag name="Filedevices">
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+	<integer>1</integer>
+  </rpmTag>
+  <rpmTag name="Fileinodes">
+	<integer>1</integer>
+	<integer>2</integer>
+	<integer>3</integer>
+	<integer>4</integer>
+	<integer>5</integer>
+	<integer>6</integer>
+	<integer>7</integer>
+	<integer>8</integer>
+	<integer>9</integer>
+	<integer>10</integer>
+	<integer>11</integer>
+	<integer>12</integer>
+	<integer>13</integer>
+	<integer>14</integer>
+	<integer>15</integer>
+	<integer>16</integer>
+	<integer>17</integer>
+  </rpmTag>
+  <rpmTag name="Filelangs">
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+	<string />
+  </rpmTag>
+  <rpmTag name="Provideflags">
+	<integer>8</integer>
+	<integer>0</integer>
+	<integer>8</integer>
+	<integer>32776</integer>
+	<integer>32776</integer>
+	<integer>32776</integer>
+	<integer>32776</integer>
+	<integer>8</integer>
+	<integer>8</integer>
+	<integer>8</integer>
+	<integer>8</integer>
+	<integer>8</integer>
+	</rpmTag>
+  <rpmTag name="Provideversion">
+	<string>202303</string>
+	<string />
+	<string>5.14.0-687.52.1.el9_8</string>
+	<string>0xd4ec10e6</string>
+	<string>0x1eb922a3</string>
+	<string>0x94cd57fa</string>
+	<string>0x4c416eb9</string>
+	<string>5.14.0-687.52.1.el9_8</string>
+	<string>5.14.0-687.52.1.el9_8</string>
+	<string>5.14.0-687.52.1.el9_8.x86_64</string>
+	<string>5.14.0-687.52.1.el9_8.x86_64</string>
+	<string>5.14.0-687.52.1.el9_8</string>
+	</rpmTag>
+  <rpmTag name="Dirindexes">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>1</integer>
+	<integer>2</integer>
+	<integer>3</integer>
+	<integer>3</integer>
+	<integer>3</integer>
+	<integer>3</integer>
+	<integer>3</integer>
+	<integer>3</integer>
+	<integer>3</integer>
+	<integer>4</integer>
+	<integer>5</integer>
+  </rpmTag>
+  <rpmTag name="Basenames">
+	<string>.vmlinuz-5.14.0-687.52.1.el9_8.x86_64.hmac</string>
+	<string>System.map-5.14.0-687.52.1.el9_8.x86_64</string>
+	<string>config-5.14.0-687.52.1.el9_8.x86_64</string>
+	<string>initramfs-5.14.0-687.52.1.el9_8.x86_64.img</string>
+	<string>symvers-5.14.0-687.52.1.el9_8.x86_64.gz</string>
+	<string>vmlinuz-5.14.0-687.52.1.el9_8.x86_64</string>
+	<string>modules</string>
+	<string>5.14.0-687.52.1.el9_8.x86_64</string>
+	<string>.vmlinuz.hmac</string>
+	<string>System.map</string>
+	<string>config</string>
+	<string>modules.builtin</string>
+	<string>modules.builtin.modinfo</string>
+	<string>symvers.gz</string>
+	<string>vmlinuz</string>
+	<string>kernel-core</string>
+	<string>COPYING-5.14.0-687.52.1.el9_8</string>
+  </rpmTag>
+  <rpmTag name="Dirnames">
+	<string>/boot/</string>
+	<string>/lib/</string>
+	<string>/lib/modules/</string>
+	<string>/lib/modules/5.14.0-687.52.1.el9_8.x86_64/</string>
+	<string>/usr/share/licenses/</string>
+	<string>/usr/share/licenses/kernel-core/</string>
+  </rpmTag>
+  <rpmTag name="Optflags">
+	<string>-O2  -fexceptions -g -grecord-gcc-switches -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -fstack-protector-strong -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1  -m64 -march=x86-64-v2 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection</string>
+  </rpmTag>
+  <rpmTag name="Payloadformat">
+	<string>cpio</string>
+  </rpmTag>
+  <rpmTag name="Payloadcompressor">
+	<string>xz</string>
+  </rpmTag>
+  <rpmTag name="Payloadflags">
+	<string>3T</string>
+  </rpmTag>
+  <rpmTag name="Platform">
+	<string>x86_64-redhat-linux-gnu</string>
+  </rpmTag>
+  <rpmTag name="Filecolors">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+  </rpmTag>
+  <rpmTag name="Fileclass">
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>1</integer>
+	<integer>2</integer>
+	<integer>3</integer>
+	<integer>2</integer>
+	<integer>4</integer>
+	<integer>4</integer>
+	<integer>0</integer>
+	<integer>0</integer>
+	<integer>1</integer>
+	<integer>0</integer>
+	<integer>2</integer>
+	<integer>3</integer>
+	<integer>2</integer>
+	<integer>4</integer>
+	<integer>0</integer>
+  </rpmTag>
+  <rpmTag name="Posttrans">
+	<string>if [ -x /usr/sbin/weak-modules ]
+then
+    /usr/sbin/weak-modules --add-kernel 5.14.0-687.52.1.el9_8.x86_64 || exit $?
+fi
+rm -f /var/lib/rpm-state/kernel/installing_core_5.14.0-687.52.1.el9_8.x86_64
+/bin/kernel-install add 5.14.0-687.52.1.el9_8.x86_64 /lib/modules/5.14.0-687.52.1.el9_8.x86_64/vmlinuz || exit $?
+if [[ ! -e "/boot/symvers-5.14.0-687.52.1.el9_8.x86_64.gz" ]]; then
+    ln -s "/lib/modules/5.14.0-687.52.1.el9_8.x86_64/symvers.gz" "/boot/symvers-5.14.0-687.52.1.el9_8.x86_64.gz"
+    command -v restorecon &amp;&gt;/dev/null &amp;&amp; restorecon "/boot/symvers-5.14.0-687.52.1.el9_8.x86_64.gz" 
+fi</string>
+  </rpmTag>
+  <rpmTag name="Posttransprog">
+	<string>/bin/sh</string>
+  </rpmTag>
+  <rpmTag name="Filedigestalgo">
+	<integer>8</integer>
+  </rpmTag>
+  <rpmTag name="Recommendname">
+	<string>linux-firmware</string>
+  </rpmTag>
+  <rpmTag name="Recommendversion">
+	<string />
+  </rpmTag>
+  <rpmTag name="Recommendflags">
+	<integer>0</integer>
+  </rpmTag>
+  <rpmTag name="Encoding">
+	<string>utf-8</string>
+  </rpmTag>
+  <rpmTag name="Payloadsha256">
+	<string>f130d6d00b8d3cdb48b36cb5b9134b0eb127ddf647d6a690ab0e42a850d2ba59</string>
+  </rpmTag>
+  <rpmTag name="Payloadsha256algo">
+	<integer>8</integer>
+  </rpmTag>
+  <rpmTag name="Payloadsha256alt">
+	<string>38bbcb1560eea9cad96cad031a24a831ae6447c6cc3d11ac375714fb44858cd8</string>
+  </rpmTag>
+</rpmHeader>
