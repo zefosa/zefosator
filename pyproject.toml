@@ -1,0 +1,66 @@
+[project]
+name = "zefosator"
+version = "2.0.0"
+description = "OpenZFS-enabled kernel packages for Fedora and AlmaLinux by repackaging upstream kernel RPMs"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "jinja2>=3.1",
+    "packaging>=24",
+    "pydantic>=2.9",
+    "pyyaml>=6",
+]
+
+[project.scripts]
+zefosator = "zefosator.cli:main"
+zefosator-check = "zefosator.check:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=8",
+    "ruff>=0.8",
+    "types-pyyaml>=6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zefosator"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",       # docstrings are not required; names and types document the code
+    "COM812",  # conflicts with ruff format
+    "ISC001",  # conflicts with ruff format
+    "S603",    # running external tools with a fixed argv is this tool's purpose
+    "S607",    # tools (rpm, podman, dnf, ...) are resolved via PATH inside known images
+    "CPY001",  # no per-file copyright headers in this project
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",    # pytest uses assert
+    "PLR2004", # literal expected values are clearer in tests
+]
+"src/zefosator/cli.py" = ["T201"]    # the CLI prints to stdout by design
+"src/zefosator/check.py" = ["T201"]  # the check runner reports progress on stdout
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src", "tests"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not container'"
+markers = ["container: needs podman and downloaded RPMs (opt-in: pytest -m container)"]
