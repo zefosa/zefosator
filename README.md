@@ -1,57 +1,148 @@
 # Zefosator
 
-*Binary* OpenZFS packages build system for Fedora and AlmaLinux systems. For perfect root-on-zfs setups.
+OpenZFS-enabled kernel packages for Fedora and AlmaLinux, for root-on-ZFS systems.
 
-## Step 1. Build RPM packages
+Zefosator does **not** compile the kernel. It downloads the vendor's binary kernel RPMs, builds
+OpenZFS against the matching `kernel-devel`, and repackages the upstream RPMs unchanged except for:
 
-1. Fetch original OS kernel packages. 
-2. Checkout, patch and build OpenZFS RPM packages.
-3. Modify OS kernel package to depend on OpenZFS RPM kmod package.
-4. Copy all artifacts to `output` directory.
+- the release, which becomes `<release>.zefosa.<dist>` (e.g. `7.2.9-200.zefosa.fc44`);
+- the ZFS kernel modules, added to `kernel-modules-core` (so they install like any other core module)
+  together with `Provides: zfs-kmod = <version>`;
+- `kernel-core` requiring `zfs-dracut >= <version>` and conflicting with `zfs-dkms`, so the initramfs
+  built when the kernel is installed always contains the ZFS dracut module;
+- a changelog entry and `Packager: Zefosa`.
 
-Build latest Fedora 39 kernel with latest OpenZFS release using prepared parameters file:
-```
-./zefosator --build --params-file params/fedora-39.params
-```
+Every rebuilt package is compared with its upstream header: file digests, modes, owners, flags,
+scripts and dependencies must be identical apart from the changes above, or the build fails.
 
-Building with custom parameters, e.g. OpenZFS 2.2.4 for Fedora 40 kernel 6.8.9-300:
-```
-./zefosator --build --os-version 40 --krn-version 6.8.9 --krn-release 300 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
-```
+`uname -r` is unchanged (`7.2.9-200.fc44.x86_64`): it is compiled into the kernel image and modules,
+so only the RPM release carries the `.zefosa` build ID.
 
-Building OpenZFS 2.2.4 for Fedora 39 kwizart LTS kernel 6.6.29-200:
-```
-./zefosator --build --krn-vendor kwizart --os-version 39 --krn-version 6.6.29 --krn-release 200 --kwizart-build-id 07383909 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
-```
+## Requirements
 
-Building OpenZFS 2.2.4 for AlmaLinux 9.4 kernel 5.14.0-362.24.1:
-```
-./zefosator --build --krn-vendor almalinux --os-version 9.4 --krn-version 5.14.0 --krn-release 427.13.1 --git-tag zfs-2.2.4 --pkg-version 2.2.4 --pkg-release 1
-```
+- `podman` (rootless is fine)
+- [`uv`](https://docs.astral.sh/uv/) (`dnf install uv`)
 
-## Step 2. Publish RPM packages to DNF repositories
+Everything else runs in a per-target container built from the vendor's base image.
 
-1. Copy relevant kernel RPM packages to OpenZFS kernel packages repository directory.
-2. Update repository metadata.
-3. Copy relevant kernel RPM packages to OpenZFS userspace packages repository directory.
-4. Update repository metadata.
-5. TODO: rsync repository with remote webserver.
-
-Fedora 40:
-```
-./zefosator --publish --pkg-version 2.2.4 --pkg-release 1 --os-version 40 --krn-version 6.8.9 --krn-release 300 --kernel-repo-dir /home/giedriusm/Repo/zfs/40/kernel --userspace-repo-dir /home/giedriusm/Repo/zfs/40/user
-```
-
-AlmaLinux 9.4:
-```
-./zefosator --publish  --krn-vendor almalinux --os-version 9.4 --krn-version 5.14.0 --krn-release 427.13.1 --pkg-version 2.2.4 --pkg-release 1 --kernel-repo-dir /home/giedriusm/Repo/zfs/el9/kernel --userspace-repo-dir /home/giedriusm/Repo/zfs/el9/user
-```
-
-## Step 3. Install/upgrade kernel+OpenZFS packages on local system
-
-1. Optional. Create local ZFS snapshot before making package upgrades. Remove `--snapshot-dataset` parameter if not required.
-2. Upgrade kernel and OpenZFS packages in single DNF transaction.
+## Usage
 
 ```
-./zefosator --install --pkg-version 2.2.4 --pkg-release 1 --os-version 40 --krn-version 6.8.9 --krn-release 300 --snapshot-dataset gmp1/fedora/40
+uv run zefosator plan   targets/fedora-44-x86_64.yaml   # show the resolved plan (JSON)
+uv run zefosator build  targets/fedora-44-x86_64.yaml   # build into output/fedora-44-x86_64/
+uv run zefosator verify targets/fedora-44-x86_64.yaml   # install and check in a clean container
 ```
+
+`build` writes:
+
+- `output/<target-id>/kernel/` — the repackaged kernel RPMs;
+- `output/<target-id>/zfs/` — every RPM the OpenZFS build produced (userspace, dracut, devel,
+  debuginfo, test, SRPMs) except the `kmod-zfs` package whose modules went into the kernel;
+- `output/<target-id>/manifest.json` — input URLs and checksums, the OpenZFS commit, and every
+  output's NEVRA and checksum.
+
+Choosing which of these to publish is up to the publishing step.
+
+`verify` copies the output into a container of the vendor's plain base image, adds it as a local
+repository with `priority=10`, and checks that dnf prefers the zefosa kernel over a newer upstream, that
+`dnf install kernel zfs` pulls `zfs-dracut`, that `modinfo` finds the ZFS module, that a
+`dracut --no-hostonly` initramfs contains ZFS, and that `rpm -V` passes.
+
+Downloads and OpenZFS clones are cached in `cache/`; logs of the last build are in
+`cache/build/<target-id>/logs/`.
+
+## Targets and vendors
+
+A target file pins one kernel and one OpenZFS version:
+
+```yaml
+# targets/almalinux-9-x86_64.yaml
+vendor: almalinux            # vendors/almalinux.yaml
+os_version: "9.8"            # quote it: YAML would read 9.10 as 9.1
+arch: x86_64
+kernel:
+  version: 5.14.0
+  release: 687.52.1
+zfs:
+  tag: zfs-2.3.9
+  version: 2.3.9
+  # release: 0               # default
+  # repo: https://github.com/openzfs/zfs.git
+  # cherry_picks: []         # commits to cherry-pick onto the tag
+  # patches: []              # files under patches/, applied with `git apply`
+# buildid: zefosa            # default: derived from zfs.release
+```
+
+A vendor file describes where packages come from and which package plays which role:
+
+```yaml
+defaults:
+  image: {base: ..., setup_packages: [...], enable_repos: [...], packages: [...]}
+  dist_tag: "el{{ os_major }}_{{ os_minor }}"
+  gpg_keys: ["/etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-{{ os_major }}"]
+  kernel_url: "https://{{ 'raw.' if os_major == 9 }}repo.almalinux.org/..."
+  packages:
+    - {name: kernel, repo: BaseOS}                       # first entry: the spec's main package
+    - {name: kernel-core, repo: BaseOS, role: core}      # gets zfs-dracut / zfs-dkms deps
+    - {name: kernel-modules-core, repo: BaseOS, role: modules}  # gets the ZFS modules
+    - {name: kernel-devel, repo: AppStream, role: devel} # OpenZFS is built against it
+overrides:
+  - when: {os_version: ">=10", arch: aarch64}
+    set: {packages: [...]}
+```
+
+- String values in both files are Jinja2 templates (sandboxed, undefined variables are errors).
+  Values starting with `{{` must be quoted. Variables: target fields (`vendor`, `os_version`, `arch`,
+  `buildid`, `kernel.*`, `zfs.*`), `os_major`/`os_minor` (integers), `dist`, `upstream_release`,
+  `uname_r`, `zefosa_release`, `target_id`, and in `kernel_url` also `name`, `repo`, `pkg_arch`, `file`.
+- `overrides` apply in order when every `when` key matches (`os_version` is a version range).
+  Mappings merge key by key; lists are replaced. Use inline `{{ … if … }}` for small string
+  differences and `overrides` for structural ones. When a distro version changes fundamentally,
+  copy the vendor file and point the target at the new name.
+- Each role (`core`, `modules`, `devel`) must appear exactly once. Every listed package is rebuilt.
+
+## Release scheme
+
+Kernel packages get release `<kernel.release>.<buildid>.<dist>`; OpenZFS packages get
+`<zfs.version>-<zfs.release>`.
+
+| `zfs.release` | buildid (default) | kernel release example | when |
+|---|---|---|---|
+| `0` (default) | `zefosa` | `200.zefosa.fc44` | normal builds; OpenZFS updates wait for the next kernel |
+| `1`, `2`, … | `zefosa1`, `zefosa2`, … | `200.zefosa1.fc44` | emergency rebuild of the same kernel |
+
+RPM orders `200.fc44 < 200.zefosa.fc44 < 200.zefosa1.fc44 < 201.fc44`. `--buildid` (or `buildid:` in
+the target) overrides the derived value.
+
+## Making dnf prefer zefosa kernels
+
+Publish the output in a repository whose `.repo` file sets `priority=` lower than the vendor repos
+(default 99), e.g. `priority=10`. When dnf resolves a package name that the zefosa repository
+provides (`kernel`, `kernel-core`, …), it takes it from that repository even if a vendor repository
+has a newer version, so `dnf upgrade` only installs zefosa kernels and waits for the next zefosa
+build. Vendor kernels still appear in `dnf list` and `dnf repoquery`; they are just never chosen.
+`zefosator verify` checks this against a newer stand-in `kernel-core` in a priority 99 repository.
+Disabling the repository returns the system to vendor kernels.
+
+Use a new repository for these packages: earlier (v1) repositories published OpenZFS with release `1`,
+which sorts above this tool's default release `0`.
+
+## Limitations
+
+- Repackaged packages are unsigned: AlmaLinux signatures and IMA file signatures (EL kernels ship
+  them) cannot be carried over. Sign the packages or the repository when publishing.
+- Upstream inputs are verified before use: AlmaLinux packages by signature, Fedora Koji packages
+  (unsigned) by digest.
+- Scriptlet triggers and file triggers are not supported; a vendor package using an unknown header
+  tag fails the build instead of being repackaged incompletely.
+
+## Development
+
+```
+uv run zefosator-check            # ruff format --check, ruff check, mypy --strict, pytest
+uv run pytest -m container        # repackage every real package of every target (needs
+                                  # rpmbuild and the RPMs in cache/downloads/)
+uv run python -m tests.fixtures.make_fixtures   # regenerate header fixtures from cache/downloads/
+```
+
+All code is fully type-annotated; `mypy --strict` and `ruff` with `select = ["ALL"]` must pass.
