@@ -9,8 +9,10 @@ from zefosator.keys import KeyPair, create_ca, create_leaf
 def signing_keys(tmp_path_factory: pytest.TempPathFactory) -> tuple[KeyPair, KeyPair]:
     """A throwaway test CA and leaf (RSA 4096 generation is slow, so share them)."""
     base = tmp_path_factory.mktemp("keys")
-    ca = create_ca(base / "ca", cn="Zefosa TEST CA", days=30)
-    leaf = create_leaf(base / "ca", base / "leaf", cn="Zefosa TEST leaf", days=30)
+    ca = create_ca(base / "ca", passphrase=None, cn="Zefosa TEST CA", days=30)
+    leaf = create_leaf(
+        base / "ca", base / "leaf", ca_passphrase=None, cn="Zefosa TEST leaf", days=30
+    )
     return ca, leaf
 
 

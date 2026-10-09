@@ -54,6 +54,8 @@ ignore = [
     "ARG001",  # fakes must match the signatures they replace
     "ARG002",  # fake methods must match the signatures they replace
     "ARG005",  # fake lambdas must match the signatures they replace
+    "S105",    # throwaway test passphrases
+    "S106",    # throwaway test passphrases
     "FBT001",  # pytest parametrizes booleans as positional arguments
 ]
 "src/zefosator/cli.py" = ["T201"]    # the CLI prints to stdout by design

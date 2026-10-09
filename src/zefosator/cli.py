@@ -1,4 +1,5 @@
 import argparse
+import getpass
 import os
 import sys
 from collections.abc import Sequence
@@ -96,12 +97,28 @@ def _build_boot(plan: Plan, args: argparse.Namespace) -> None:
     podman.build_boot(job, root, signing=source, ca_cert=ca)
 
 
+def _new_ca_passphrase() -> str:
+    passphrase = getpass.getpass("Passphrase for the new CA key: ")
+    if getpass.getpass("Repeat the passphrase: ") != passphrase:
+        msg = "the passphrases do not match"
+        raise ConfigError(msg)
+    return passphrase
+
+
 def _keys(args: argparse.Namespace) -> None:
     if args.key_command == "ca":
-        pair = keys.create_ca(args.out, cn=args.cn, days=args.days)
+        pair = keys.create_ca(args.out, passphrase=_new_ca_passphrase(), cn=args.cn, days=args.days)
         print(f"Created {args.cn}: {pair.cert_pem} (keep {pair.key} offline)")
     else:
-        pair = keys.create_leaf(args.ca, args.out, cn=args.cn, days=args.days)
+        ca_key = args.ca / "ca.key"
+        passphrase = (
+            getpass.getpass(f"Passphrase for {ca_key}: ")
+            if ca_key.is_file() and keys.ca_key_encrypted(args.ca)
+            else None
+        )
+        pair = keys.create_leaf(
+            args.ca, args.out, ca_passphrase=passphrase, cn=args.cn, days=args.days
+        )
         print(f"Issued {args.cn}: {pair.cert_pem}, key {pair.key}")
     print(f"SHA-256 fingerprint (DER): {pair.sha256}")
 

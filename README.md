@@ -146,9 +146,15 @@ kexecs only kernels whose signature verifies against the vendor CA that shim pro
 ### Keys
 
 ```
-uv run zefosator keys ca   --out /secure/zefosa-ca        # keep ca.key offline
+uv run zefosator keys ca   --out /secure/zefosa-ca        # prompts for the CA passphrase
 uv run zefosator keys leaf --ca /secure/zefosa-ca --out /secure/zefosa-signing
 ```
+
+`keys ca` asks for a passphrase (at least 12 characters) and writes `ca.key` only in encrypted
+form: PKCS#8, AES-256-CBC, key derived with PBKDF2-HMAC-SHA256 at 600,000 iterations. Back up
+`ca.key` together with its passphrase (a password manager holds both well) and keep it off build
+machines. `keys leaf` asks for that passphrase; the leaf's `signing.key` stays unencrypted, because
+builds use it unattended.
 
 The CA certificate may only sign certificates (`keyCertSign`, no `digitalSignature`): only such MOK
 keys reach the kernel's `.machine` keyring. Leaves are code-signing certificates valid for at most

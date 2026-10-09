@@ -100,7 +100,7 @@ def test_build_boot_checks_leaf_chains_to_ca(
     tmp_path: Path, signing_keys: tuple[KeyPair, KeyPair], capsys: pytest.CaptureFixture[str]
 ) -> None:
     _, leaf = signing_keys
-    other = create_ca(tmp_path / "other", cn="Other CA", days=5)
+    other = create_ca(tmp_path / "other", passphrase=None, cn="Other CA", days=5)
     target = str(ROOT / "targets" / "fedora-44-x86_64.yaml")
     args = [
         "build-boot",
