@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from zefosator.boottest import (
+    BUILDER_PACKAGES,
     REQUIRED_TOOLS,
     VmLimits,
     check_host_tools,
@@ -100,3 +101,8 @@ def test_builder_script_is_valid_bash(tmp_path: Path) -> None:
     import subprocess  # noqa: PLC0415 -- only needed here
 
     assert subprocess.run(["bash", "-n", str(script)], check=False).returncode == 0
+
+
+def test_builder_vm_packages_include_zfs_dracut() -> None:
+    # zefosa kernel-core requires zfs-dracut; the builder installs kernel and ZFS together
+    assert "/root/t/rpms/zfs-dracut-*.rpm" in BUILDER_PACKAGES

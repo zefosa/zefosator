@@ -39,7 +39,7 @@ TEMPLATES = Path(__file__).resolve().parent / "templates" / "boottest"
 # The builder VM needs the zefosa kernel and ZFS tools; Secure Boot is off there.
 BUILDER_PACKAGES = (
     "dnf install -y gdisk dosfstools /root/t/rpms/kernel*.rpm /root/t/rpms/zfs-[0-9]*.rpm "
-    "/root/t/rpms/lib*.rpm"
+    "/root/t/rpms/zfs-dracut-*.rpm /root/t/rpms/lib*.rpm"
 )
 _GUESTFS_ENV = {"LIBGUESTFS_BACKEND": "direct"}
 _RPMS = re.compile(
