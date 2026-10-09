@@ -61,6 +61,16 @@ class ZfsConfig(_Model):
         return value
 
 
+class ShimPin(_Model):
+    version: ScalarStr
+    release: ScalarStr
+
+
+class TargetBoot(_Model):
+    shim: ShimPin
+    cloud_image: str
+
+
 class TargetFile(_Model):
     vendor: str
     os_version: ScalarStr
@@ -68,6 +78,7 @@ class TargetFile(_Model):
     kernel: KernelSpec
     buildid: str | None = None
     zfs: ZfsConfig
+    boot: TargetBoot | None = None
 
 
 class ImageConfig(_Model):
@@ -84,12 +95,20 @@ class VendorPackage(_Model):
     role: Role | None = None
 
 
+class VendorBoot(_Model):
+    common: bool = False
+    esp_dir: str = Field(pattern=r"^[A-Za-z0-9_-]+$")
+    shim_url: str
+    drop_requires: tuple[str, ...] = ()
+
+
 class VendorSettings(_Model):
     image: ImageConfig
     dist_tag: str
     gpg_keys: tuple[str, ...] = ()
     kernel_url: str
     packages: tuple[VendorPackage, ...]
+    boot: VendorBoot | None = None
 
 
 class When(_Model):
@@ -115,6 +134,22 @@ class ResolvedPackage(_Model):
     pkg_arch: str
     file: str
     url: str
+
+
+class BootPlan(_Model):
+    common: bool
+    esp_dir: str
+    shim_version: str
+    shim_release: str
+    shim_file: str
+    shim_url: str
+    drop_requires: tuple[str, ...]
+    cloud_image: str
+
+    @property
+    def zefosa_shim_release(self) -> str:
+        """Vendor release + .zefosa sorts above the vendor's own build in every distro."""
+        return f"{self.shim_release}.zefosa"
 
 
 class SigningInfo(_Model):
@@ -143,6 +178,7 @@ class Plan(_Model):
     gpg_keys: tuple[str, ...]
     packages: tuple[ResolvedPackage, ...]
     signing: SigningInfo | None = None
+    boot: BootPlan | None = None
 
     def role(self, role: Role) -> ResolvedPackage:
         return next(p for p in self.packages if p.role == role)
@@ -327,6 +363,7 @@ def load_plan(target_path: Path, *, buildid: str | None = None) -> Plan:
             ResolvedPackage(name=pkg.name, role=pkg.role, pkg_arch=pkg_arch, file=file, url=url)
         )
 
+    boot = _boot_plan(target, settings, variables, (target_path, vendor_path))
     return Plan(
         target_id=str(variables["target_id"]),
         vendor=target.vendor,
@@ -345,4 +382,82 @@ def load_plan(target_path: Path, *, buildid: str | None = None) -> Plan:
         image=image,
         gpg_keys=tuple(rv(k, "gpg_keys") for k in settings.gpg_keys),
         packages=tuple(packages),
+        boot=boot,
+    )
+
+
+_COMMIT_RE = r"^[0-9a-f]{40}$"
+_SHA256_RE = r"^[0-9a-f]{64}$"
+
+
+class ZbmPin(_Model):
+    version: ScalarStr
+    repo: str
+    commit: str = Field(pattern=_COMMIT_RE)
+    release: int = Field(ge=1)
+    build_packages: tuple[str, ...]
+    recovery_packages: tuple[str, ...]
+    recovery_tools: tuple[str, ...]
+
+
+class RefindPin(_Model):
+    url: str
+    sha256: str = Field(pattern=_SHA256_RE)
+    release: int = Field(ge=1)
+
+
+class VersionPin(_Model):
+    version: ScalarStr = "1"
+    release: int = Field(ge=1)
+
+
+class BootConfig(_Model):
+    zfsbootmenu: ZbmPin
+    refind: RefindPin
+    ca: VersionPin
+    tools: VersionPin
+
+
+def load_boot_config(root: Path) -> BootConfig:
+    path = root / "boot" / "boot.yaml"
+    try:
+        return BootConfig.model_validate(_load_yaml(path))
+    except ValidationError as exc:
+        raise _validation_error(str(path), exc) from exc
+
+
+def _boot_plan(
+    target: TargetFile,
+    settings: VendorSettings,
+    variables: Mapping[str, object],
+    sources: tuple[Path, Path],
+) -> BootPlan | None:
+    target_path, vendor_path = sources
+    if target.boot is None:
+        return None
+    if settings.boot is None:
+        msg = f"{target_path}: boot: vendor {target.vendor!r} has no boot settings"
+        raise ConfigError(msg)
+    for pattern in settings.boot.drop_requires:
+        try:
+            re.compile(pattern)
+        except re.error as exc:
+            msg = f"{vendor_path}: boot.drop_requires: invalid regex {pattern!r}: {exc}"
+            raise ConfigError(msg) from exc
+    shim = target.boot.shim
+    shim_file = f"shim-x64-{shim.version}-{shim.release}.{target.arch}.rpm"
+    url = render(
+        settings.boot.shim_url,
+        {**variables, "shim": shim.model_dump(), "shim_file": shim_file},
+        where=f"{vendor_path}: boot.shim_url",
+    )
+    return BootPlan(
+        common=settings.boot.common,
+        esp_dir=settings.boot.esp_dir,
+        shim_version=shim.version,
+        shim_release=shim.release,
+        shim_file=shim_file,
+        shim_url=url,
+        drop_requires=settings.boot.drop_requires,
+        cloud_image=target.boot.cloud_image,
     )

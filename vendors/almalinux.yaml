@@ -50,4 +50,9 @@ defaults:
     - {name: kernel-devel-matched, repo: AppStream}
     - {name: kernel-headers, repo: AppStream}
     - {name: kernel-abi-stablelists, repo: BaseOS, arch: noarch}
+  boot:
+    common: false
+    esp_dir: almalinux
+    shim_url: "https://{{ 'raw.' if os_major == 9 }}repo.almalinux.org/almalinux/{{ os_version }}/BaseOS/{{ arch }}/os/Packages/{{ shim_file }}"
+    drop_requires: ['^grub2-', 'grub2-sig-key']
 overrides: []

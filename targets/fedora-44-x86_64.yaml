@@ -8,3 +8,6 @@ kernel:
 zfs:
   tag: zfs-2.4.4
   version: 2.4.4
+boot:
+  shim: {version: "16.1", release: "7"}
+  cloud_image: https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2

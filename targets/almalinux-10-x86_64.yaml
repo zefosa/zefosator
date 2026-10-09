@@ -8,3 +8,6 @@ kernel:
 zfs:
   tag: zfs-2.3.9
   version: 2.3.9
+boot:
+  shim: {version: "16.1", release: "4.el10.alma.1"}
+  cloud_image: https://repo.almalinux.org/almalinux/10/cloud/x86_64/images/AlmaLinux-10-GenericCloud-latest.x86_64.qcow2

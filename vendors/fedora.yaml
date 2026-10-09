@@ -47,4 +47,9 @@ defaults:
     - {name: kernel-modules-internal}
     - {name: kernel-devel, role: devel}
     - {name: kernel-devel-matched}
+  boot:
+    common: true   # distro-independent boot packages (ZFSBootMenu) are built from this kernel
+    esp_dir: fedora
+    shim_url: "https://kojipkgs.fedoraproject.org/packages/shim/{{ shim.version }}/{{ shim.release }}/{{ arch }}/{{ shim_file }}"
+    drop_requires: ['^grub2-']
 overrides: []
