@@ -34,7 +34,7 @@ if dnf --version 2>/dev/null | grep -q dnf5; then HOSTCFG=--use-host-config; fi
 dnf --installroot=/mnt --releasever={{ plan.os_major }} $HOSTCFG -y --setopt=install_weak_deps=False \
     install basesystem systemd systemd-udev kmod keyutils mokutil util-linux procps-ng dracut \
     /root/t/rpms/*.rpm 2>&1 | cat
-chroot /mnt rpm -q shim-x64 zefosa-boot zefosa-refind zefosa-zfsbootmenu zefosa-zfsbootmenu-recovery
+rpm --root=/mnt -q shim-x64 zefosa-boot zefosa-refind zefosa-zfsbootmenu zefosa-zfsbootmenu-recovery
 # 20-zbm.install (zefosa-boot) must have placed the kernel where ZFSBootMenu looks
 test -f /mnt/boot/vmlinuz-$UNAME
 test -f /mnt/boot/initramfs-$UNAME.img

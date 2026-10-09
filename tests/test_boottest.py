@@ -106,3 +106,10 @@ def test_builder_script_is_valid_bash(tmp_path: Path) -> None:
 def test_builder_vm_packages_include_zfs_dracut() -> None:
     # zefosa kernel-core requires zfs-dracut; the builder installs kernel and ZFS together
     assert "/root/t/rpms/zfs-dracut-*.rpm" in BUILDER_PACKAGES
+
+
+def test_builder_queries_target_packages_from_outside_the_chroot() -> None:
+    # the minimal target root has no rpm binary; query its database from the builder
+    script = render_builder_script(PLAN)
+    assert "chroot /mnt rpm" not in script
+    assert "rpm --root=/mnt -q shim-x64 zefosa-boot" in script
