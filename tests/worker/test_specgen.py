@@ -29,7 +29,7 @@ from zefosator.worker.rpmheader import (
     parse_header_xml,
     read_header,
 )
-from zefosator.worker.specgen import dependency_line, file_line, render_spec
+from zefosator.worker.specgen import dependency_line, file_line, payload_macro, render_spec
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -296,3 +296,21 @@ def test_star_changelog_lines_survive_rpmbuild(tmp_path: Path) -> None:
         capture_output=True,
     )
     assert diff_headers(header, read_header(tmp_path / "out" / "kernel.rpm")) == []
+
+
+@pytest.mark.parametrize(
+    ("compressor", "flags", "expected"),
+    [
+        ("xz", "3T", "w3T.xzdio"),
+        ("zstd", "19", "w19.zstdio"),
+        ("gzip", "9", "w9.gzdio"),
+        ("bzip2", "9", "w9.bzdio"),
+    ],
+)
+def test_payload_macro(compressor: str, flags: str, expected: str) -> None:
+    assert payload_macro(compressor, flags) == expected
+
+
+def test_unknown_payload_compressor_rejected() -> None:
+    with pytest.raises(BuildError, match="lz4"):
+        payload_macro("lz4", "1")

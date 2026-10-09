@@ -112,6 +112,17 @@ _UNSAFE_PATH_CHARS = frozenset('[]*?{}"\\% \t\n')
 _GENERATED = SENSE_INTERP | SENSE_RPMLIB
 
 
+_PAYLOAD_IO = {"xz": "xzdio", "zstd": "zstdio", "gzip": "gzdio", "bzip2": "bzdio", "lzma": "lzdio"}
+
+
+def payload_macro(compressor: str, flags: str) -> str:
+    """rpmbuild _binary_payload for an upstream header's compressor and level."""
+    if compressor not in _PAYLOAD_IO:
+        msg = f"unsupported payload compressor {compressor!r}"
+        raise BuildError(msg)
+    return f"w{flags}.{_PAYLOAD_IO[compressor]}"
+
+
 def escape(text: str) -> str:
     return text.replace("%", "%%")
 
@@ -300,7 +311,7 @@ def render_spec(main: Header, subpackages: Sequence[Header]) -> str:
         for e in main.changelog
     )
     return _ENV.get_template("repackaged.spec.j2").render(
-        payload=f"w{main.payload_flags}.{main.payload_compressor}dio",
+        payload=payload_macro(main.payload_compressor, main.payload_flags),
         digest_algo=main.digest_algo,
         packages=[
             _package_view(main, is_main=True),
