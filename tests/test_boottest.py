@@ -113,3 +113,8 @@ def test_builder_queries_target_packages_from_outside_the_chroot() -> None:
     script = render_builder_script(PLAN)
     assert "chroot /mnt rpm" not in script
     assert "rpm --root=/mnt -q shim-x64 zefosa-boot" in script
+
+
+def test_builder_never_pipes_into_grep_q() -> None:
+    # under pipefail, grep -q exiting early SIGPIPEs the producer and fails the step
+    assert "| grep -q" not in render_builder_script(PLAN)

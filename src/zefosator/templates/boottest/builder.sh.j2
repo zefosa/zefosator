@@ -30,7 +30,7 @@ mount --bind /dev /mnt/dev
 mount -t proc proc /mnt/proc
 mount -t sysfs sys /mnt/sys
 HOSTCFG=""
-if dnf --version 2>/dev/null | grep -q dnf5; then HOSTCFG=--use-host-config; fi
+if dnf --version 2>/dev/null | grep dnf5 >/dev/null; then HOSTCFG=--use-host-config; fi
 dnf --installroot=/mnt --releasever={{ plan.os_major }} $HOSTCFG -y --setopt=install_weak_deps=False \
     install basesystem systemd systemd-udev kmod keyutils mokutil util-linux procps-ng dracut \
     /root/t/rpms/*.rpm 2>&1 | cat
@@ -43,7 +43,8 @@ test -f /mnt/boot/efi/EFI/zefosa/grubx64.efi
 test -f /mnt/boot/efi/EFI/zefosa/zfsbootmenu.efi
 # a chroot cannot be relied on for hostonly detection of the ZFS root
 chroot /mnt dracut -f --no-hostonly --kver $UNAME /boot/initramfs-$UNAME.img
-chroot /mnt lsinitrd /boot/initramfs-$UNAME.img | grep -q 'zfs\.ko'
+chroot /mnt lsinitrd /boot/initramfs-$UNAME.img > /root/t/initrd.lst
+grep -q 'zfs\.ko' /root/t/initrd.lst
 chroot /mnt zefosa-boot setup --pool zroot --esp /boot/efi --no-firmware --no-mok
 sed -i 's/zbm.timeout=5 ro quiet loglevel=0/zbm.timeout=2 console=ttyS0,115200 loglevel=6/' \
     /mnt/boot/efi/EFI/zefosa/refind.conf
