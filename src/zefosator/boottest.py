@@ -88,6 +88,18 @@ class VmOutcome:
     returncode: int | None
 
 
+_STUCK = ("zfsbootmenu / >", "emergency shell")
+# A refused image just hangs; the unsigned-kernel refusal is read from serial, so stop on it.
+# The unsigned-zbm evidence is refind.log on the ESP, written after shim's message: wait for quiet.
+RUN_LIMITS = {
+    "positive": VmLimits(idle=90, total=300, stop_patterns=_STUCK),
+    "unsigned-kernel": VmLimits(
+        idle=90, total=300, stop_patterns=(*_STUCK, "Unable to load kernel")
+    ),
+    "unsigned-zbm": VmLimits(idle=30, total=300, stop_patterns=_STUCK),
+}
+
+
 PR_SET_PDEATHSIG = 1
 
 
@@ -344,7 +356,7 @@ class BootTest:
                 [str(self.work / "target.qcow2")], serial, secure=self._vars(name), network=False
             ),
             serial,
-            VmLimits(idle=90, total=300, stop_patterns=("zfsbootmenu / >", "emergency shell")),
+            RUN_LIMITS[name],
         )
         print(f"    {name}: {outcome.reason}", flush=True)  # noqa: T201
         return serial.read_text(errors="replace") if serial.exists() else ""

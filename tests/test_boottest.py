@@ -178,3 +178,13 @@ def test_vm_dies_with_a_killed_zefosator(tmp_path: Path) -> None:
         assert _wait_dead(int(pidfile.read_text()))
     finally:
         watcher.kill()
+
+
+def test_negative_runs_do_not_wait_out_the_positive_idle_limit() -> None:
+    from zefosator.boottest import RUN_LIMITS  # noqa: PLC0415
+
+    assert "Unable to load kernel" in RUN_LIMITS["unsigned-kernel"].stop_patterns
+    # rEFInd writes refind.log after shim refuses the image: stop on silence, not on the message
+    assert "Verification failed" not in "".join(RUN_LIMITS["unsigned-zbm"].stop_patterns)
+    assert RUN_LIMITS["unsigned-zbm"].idle <= 30
+    assert RUN_LIMITS["positive"].idle >= 90
