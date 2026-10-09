@@ -13,6 +13,7 @@ from jinja2 import Environment, PackageLoader, StrictUndefined
 from zefosator.config import Plan
 from zefosator.errors import BuildError
 from zefosator.signing import SigningInput
+from zefosator.worker.boot import BootJob
 
 UV_VERSION = "0.12.19"
 PROJECT_FILES = ("pyproject.toml", "uv.lock", ".python-version")
@@ -54,10 +55,19 @@ def image_build_argv(ref: str, context: Path) -> list[str]:
 
 SECRET_TARGET = "zefosa-signing-key"  # noqa: S105 -- a podman secret name, not a password
 CERT_TARGET = "/signing/cert.pem"
+CA_TARGET = "/signing/ca.der"
 
 
-def worker_run_argv(
-    plan: Plan, ref: str, root: Path, *, secret: str | None = None, cert: Path | None = None
+def worker_run_argv(  # noqa: PLR0913 -- one keyword per optional mount
+    plan: Plan,
+    ref: str,
+    root: Path,
+    *,
+    secret: str | None = None,
+    cert: Path | None = None,
+    command: str = "build",
+    job_file: str | None = None,
+    volumes: tuple[str, ...] = (),
 ) -> list[str]:
     signing = []
     if secret is not None and cert is not None:
@@ -73,14 +83,15 @@ def worker_run_argv(
         f"--volume={root}:/src:ro",
         f"--volume={root / 'cache'}:/cache",
         f"--volume={root / 'output' / plan.target_id}:/output",
+        *volumes,
         *signing,
         "--env=PYTHONPATH=/src/src",
         ref,
         WORKER_PYTHON,
         "-m",
         "zefosator.worker",
-        "build",
-        f"/cache/plans/{plan.target_id}.json",
+        command,
+        job_file or f"/cache/plans/{plan.target_id}.json",
     ]
 
 
@@ -144,16 +155,69 @@ def build(
     plans.mkdir(parents=True, exist_ok=True)
     (plans / f"{plan.target_id}.json").write_text(plan.model_dump_json(indent=2))
     (root / "output" / plan.target_id).mkdir(parents=True, exist_ok=True)
+    _run_signed(
+        lambda secret: worker_run_argv(
+            plan, ref, root, secret=secret, cert=signing.cert if signing else None
+        ),
+        signing,
+        execute,
+        secrets,
+    )
+
+
+def _run_signed(
+    argv_for: Callable[[str | None], list[str]],
+    signing: SigningInput | None,
+    execute: Executor,
+    secrets: SecretStore | None,
+) -> None:
+    """Run the worker; with signing, the key exists as a podman secret only during the run."""
     if signing is None:
-        _check(worker_run_argv(plan, ref, root), execute)
+        _check(argv_for(None), execute)
         return
     store = secrets or PodmanSecrets()
     name = f"zefosa-signing-{_token()}"
     store.create(name, signing)
     try:
-        _check(worker_run_argv(plan, ref, root, secret=name, cert=signing.cert), execute)
+        _check(argv_for(name), execute)
     finally:
         store.remove(name)
+
+
+def build_boot(  # noqa: PLR0913 -- signing inputs and test seams are keyword-only
+    job: BootJob,
+    root: Path,
+    *,
+    signing: SigningInput | None,
+    ca_cert: Path | None,
+    execute: Executor = execute,
+    secrets: SecretStore | None = None,
+) -> None:
+    plan = job.plan
+    ref = ensure_image(plan, root, execute=execute)
+    plans = root / "cache" / "plans"
+    plans.mkdir(parents=True, exist_ok=True)
+    (plans / f"{plan.target_id}.boot.json").write_text(job.model_dump_json(indent=2))
+    (root / "output" / plan.target_id / "boot").mkdir(parents=True, exist_ok=True)
+    (root / "output" / "boot").mkdir(parents=True, exist_ok=True)
+    volumes = [f"--volume={root / 'output' / 'boot'}:/boot-output"]
+    if ca_cert is not None:
+        volumes.append(f"--volume={ca_cert}:{CA_TARGET}:ro")
+    _run_signed(
+        lambda secret: worker_run_argv(
+            plan,
+            ref,
+            root,
+            secret=secret,
+            cert=signing.cert if signing else None,
+            command="boot",
+            job_file=f"/cache/plans/{plan.target_id}.boot.json",
+            volumes=tuple(volumes),
+        ),
+        signing,
+        execute,
+        secrets,
+    )
 
 
 def _token() -> str:

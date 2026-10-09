@@ -3,17 +3,19 @@ from pathlib import Path
 
 import pytest
 
-from zefosator.config import SigningInfo, load_plan
+from zefosator.config import SigningInfo, load_boot_config, load_plan
 from zefosator.errors import BuildError
 from zefosator.podman import (
     UV_VERSION,
     build,
+    build_boot,
     image_build_argv,
     image_ref,
     render_containerfile,
     worker_run_argv,
 )
 from zefosator.signing import SigningInput
+from zefosator.worker.boot import BootJob
 
 ROOT = Path(__file__).resolve().parent.parent
 FEDORA = load_plan(ROOT / "targets" / "fedora-44-x86_64.yaml")
@@ -172,3 +174,39 @@ def test_unsigned_build_has_no_secret(tmp_path: Path) -> None:
     build(FEDORA, make_root(tmp_path), signing=None, execute=podman, secrets=secrets)
     assert secrets.created == []
     assert not [a for a in podman.calls[-1] if a.startswith("--secret")]
+
+
+def boot_job(target: str) -> BootJob:
+    plan = load_plan(ROOT / "targets" / f"{target}.yaml")
+    return BootJob(plan=plan, config=load_boot_config(ROOT))
+
+
+def test_build_boot_common_mounts_signing_material(tmp_path: Path) -> None:
+    root = make_root(tmp_path)
+    cert, ca = tmp_path / "signing.pem", tmp_path / "ca.der"
+    cert.write_text("c")
+    ca.write_text("a")
+    secrets = FakeSecrets()
+    podman = FakePodman(image_exists=True)
+    job = boot_job("fedora-44-x86_64")
+    build_boot(job, root, signing=SigningInput(cert=cert, key_file=cert), ca_cert=ca,
+               execute=podman, secrets=secrets)  # fmt: skip
+    run = podman.calls[-1]
+    tid = job.plan.target_id
+    assert f"--volume={root / 'output' / tid}:/output" in run
+    assert f"--volume={root / 'output' / 'boot'}:/boot-output" in run
+    assert f"--volume={ca}:/signing/ca.der:ro" in run
+    assert any(a.startswith("--secret=zefosa-signing-") for a in run)
+    assert run[-2:] == ["boot", f"/cache/plans/{tid}.boot.json"]
+    saved = BootJob.model_validate_json((root / "cache" / "plans" / f"{tid}.boot.json").read_text())
+    assert saved == job
+    assert len(secrets.removed) == 1
+
+
+def test_build_boot_shim_only_has_no_secrets(tmp_path: Path) -> None:
+    secrets = FakeSecrets()
+    podman = FakePodman(image_exists=True)
+    build_boot(boot_job("almalinux-9-x86_64"), make_root(tmp_path), signing=None, ca_cert=None,
+               execute=podman, secrets=secrets)  # fmt: skip
+    assert secrets.created == []
+    assert not [a for a in podman.calls[-1] if "/signing/" in a or a.startswith("--secret")]

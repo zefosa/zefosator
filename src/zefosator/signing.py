@@ -74,3 +74,25 @@ def check_key_matches(signing: SigningInput) -> None:
     if key_pub != cert_key:
         msg = f"signing key does not match certificate {signing.cert}"
         raise ConfigError(msg)
+
+
+def ca_der(ca_cert: Path, signing: SigningInput, out: Path) -> Path:
+    """Check that the signing leaf was issued by `ca_cert` (PEM or DER) and write the CA as DER."""
+    if not ca_cert.is_file():
+        msg = f"CA certificate {ca_cert} not found"
+        raise ConfigError(msg)
+    form = "DER" if ca_cert.read_bytes()[:1] == b"\x30" else "PEM"
+    pem = _openssl(["x509", "-inform", form, "-in", str(ca_cert)])
+    out.parent.mkdir(parents=True, exist_ok=True)
+    pem_file = out.with_suffix(".pem")
+    pem_file.write_bytes(pem)
+    check = subprocess.run(
+        ["openssl", "verify", "-CAfile", str(pem_file), str(signing.cert)],
+        capture_output=True,
+        check=False,
+    )
+    if check.returncode != 0:
+        msg = f"signing certificate {signing.cert} is not issued by the CA {ca_cert}"
+        raise ConfigError(msg)
+    out.write_bytes(_openssl(["x509", "-in", str(pem_file), "-outform", "DER"]))
+    return out

@@ -6,8 +6,9 @@ import pytest
 from zefosator import podman, verify
 from zefosator.cli import main
 from zefosator.config import Plan
-from zefosator.keys import KeyPair
+from zefosator.keys import KeyPair, create_ca
 from zefosator.signing import SigningInput
+from zefosator.worker.boot import BootJob
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -76,3 +77,63 @@ def test_signed_build_records_certificate_in_plan(
     assert main(args) == 0
     assert seen[0].signing is not None
     assert seen[0].signing.cert_sha256 == leaf.sha256
+
+
+def test_build_boot_for_fedora_needs_ca(
+    signing_keys: tuple[KeyPair, KeyPair], capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, leaf = signing_keys
+    target = str(ROOT / "targets" / "fedora-44-x86_64.yaml")
+    args = [
+        "build-boot",
+        target,
+        "--signing-key",
+        str(leaf.key),
+        "--signing-cert",
+        str(leaf.cert_pem),
+    ]
+    assert main(args) == 1
+    assert "--ca-cert" in capsys.readouterr().err
+
+
+def test_build_boot_checks_leaf_chains_to_ca(
+    tmp_path: Path, signing_keys: tuple[KeyPair, KeyPair], capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, leaf = signing_keys
+    other = create_ca(tmp_path / "other", cn="Other CA", days=5)
+    target = str(ROOT / "targets" / "fedora-44-x86_64.yaml")
+    args = [
+        "build-boot",
+        target,
+        *("--signing-key", str(leaf.key), "--signing-cert", str(leaf.cert_pem)),
+        *("--ca-cert", str(other.cert_pem)),
+    ]
+    assert main(args) == 1
+    assert "not issued by" in capsys.readouterr().err
+
+
+def test_build_boot_runs_podman(
+    monkeypatch: pytest.MonkeyPatch, signing_keys: tuple[KeyPair, KeyPair]
+) -> None:
+    ca, leaf = signing_keys
+    seen: list[tuple[str, bool, bool]] = []
+
+    def fake(
+        job: BootJob, root: Path, *, signing: SigningInput | None, ca_cert: Path | None
+    ) -> None:
+        assert ca_cert is None or ca_cert.read_bytes() == ca.cert_der.read_bytes()
+        seen.append((job.plan.target_id, signing is not None, job.plan.signing is not None))
+
+    monkeypatch.setattr(podman, "build_boot", fake)
+    fedora = str(ROOT / "targets" / "fedora-44-x86_64.yaml")
+    signed = [
+        "--signing-key",
+        str(leaf.key),
+        "--signing-cert",
+        str(leaf.cert_pem),
+        "--ca-cert",
+        str(ca.cert_pem),
+    ]
+    assert main(["build-boot", fedora, *signed]) == 0
+    assert main(["build-boot", str(ROOT / "targets" / "almalinux-9-x86_64.yaml")]) == 0
+    assert seen == [("fedora-44-x86_64", True, True), ("almalinux-9.8-x86_64", False, False)]

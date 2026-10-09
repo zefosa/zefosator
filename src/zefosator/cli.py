@@ -5,13 +5,15 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from zefosator import keys, podman, signing, verify
-from zefosator.config import Plan, load_plan, project_root
-from zefosator.errors import ZefosatorError
+from zefosator.config import Plan, load_boot_config, load_plan, project_root
+from zefosator.errors import ConfigError, ZefosatorError
+from zefosator.worker.boot import BootJob
 
 TARGET_COMMANDS = (
     ("plan", "print the resolved build plan as JSON"),
     ("build", "build OpenZFS and repackage the kernel into output/<target-id>/"),
     ("verify", "install output/<target-id>/ in a clean vendor container and check it"),
+    ("build-boot", "build shim (and on Fedora the common boot packages) into output/"),
 )
 
 
@@ -29,8 +31,10 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument(
             "--buildid", help="override the kernel release build ID (e.g. zefosa1)"
         )
-        if name == "build":
-            _signing_arguments(command)
+        if name in {"build", "build-boot"}:
+            _signing_arguments(command, unsigned=name == "build")
+        if name == "build-boot":
+            command.add_argument("--ca-cert", type=Path, help="zefosa CA certificate (PEM or DER)")
     key_parser = commands.add_parser("keys", help="create the Secure Boot CA or a signing leaf")
     key_commands = key_parser.add_subparsers(dest="key_command", required=True)
     ca = key_commands.add_parser("ca", help="create the zefosa Secure Boot CA")
@@ -45,16 +49,17 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _signing_arguments(parser: argparse.ArgumentParser) -> None:
+def _signing_arguments(parser: argparse.ArgumentParser, *, unsigned: bool) -> None:
     parser.add_argument(
         "--signing-key", type=Path, help=f"leaf private key (or env {signing.KEY_ENV})"
     )
     parser.add_argument(
         "--signing-cert", type=Path, help=f"leaf certificate (or env {signing.CERT_ENV})"
     )
-    parser.add_argument(
-        "--unsigned", action="store_true", help="development build: unsigned modules"
-    )
+    if unsigned:
+        parser.add_argument(
+            "--unsigned", action="store_true", help="development build: unsigned modules"
+        )
 
 
 def _build(plan: Plan, args: argparse.Namespace) -> None:
@@ -65,6 +70,27 @@ def _build(plan: Plan, args: argparse.Namespace) -> None:
         signing.check_key_matches(source)
         plan = plan.model_copy(update={"signing": signing.describe_cert(source.cert)})
     podman.build(plan, project_root(args.target), signing=source)
+
+
+def _build_boot(plan: Plan, args: argparse.Namespace) -> None:
+    root = project_root(args.target)
+    if plan.boot is None:
+        msg = f"{args.target}: no boot section; build-boot needs boot.shim and boot.cloud_image"
+        raise ConfigError(msg)
+    source, ca = None, None
+    if plan.boot.common:
+        source = signing.resolve_signing(
+            key=args.signing_key, cert=args.signing_cert, unsigned=False, env=os.environ
+        )
+        if args.ca_cert is None:
+            msg = "--ca-cert is required to build the common boot packages (zefosa-secureboot-ca)"
+            raise ConfigError(msg)
+        assert source is not None  # noqa: S101 -- resolve_signing(unsigned=False) never returns None
+        signing.check_key_matches(source)
+        ca = signing.ca_der(args.ca_cert, source, root / "cache" / "signing" / "ca.der")
+        plan = plan.model_copy(update={"signing": signing.describe_cert(source.cert)})
+    job = BootJob(plan=plan, config=load_boot_config(root))
+    podman.build_boot(job, root, signing=source, ca_cert=ca)
 
 
 def _keys(args: argparse.Namespace) -> None:
@@ -88,6 +114,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(plan.model_dump_json(indent=2))
         elif args.command == "build":
             _build(plan, args)
+        elif args.command == "build-boot":
+            _build_boot(plan, args)
         elif args.command == "verify":
             verify.verify(plan, project_root(args.target))
     except ZefosatorError as exc:

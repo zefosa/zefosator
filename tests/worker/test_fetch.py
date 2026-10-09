@@ -4,7 +4,7 @@ import pytest
 
 from zefosator.config import load_plan
 from zefosator.errors import BuildError
-from zefosator.worker.fetch import fetch_all
+from zefosator.worker.fetch import fetch_all, fetch_file, sha256_verifier
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAN = load_plan(ROOT / "targets" / "almalinux-9-x86_64.yaml")
@@ -74,3 +74,18 @@ def test_persistent_failure_reports_url(tmp_path: Path) -> None:
         fetch_all(PLAN, tmp_path, download=net.download, verify=verify_good, sleep=lambda _: None)
     assert not list(tmp_path.glob("*.part"))
     assert not list(tmp_path.glob("*.rpm"))
+
+
+def test_fetch_file_with_sha256_verifier(tmp_path: Path) -> None:
+    good = b"payload"
+    digest = __import__("hashlib").sha256(good).hexdigest()
+
+    def download(url: str, dest: Path) -> None:
+        dest.write_bytes(good if url.endswith("good") else b"evil")
+
+    out = fetch_file("https://x/good", tmp_path / "f.rpm", sha256_verifier(digest),
+                     download=download, sleep=lambda _: None)  # fmt: skip
+    assert out.read_bytes() == good
+    with pytest.raises(BuildError, match="sha256"):
+        fetch_file("https://x/bad", tmp_path / "g.rpm", sha256_verifier(digest),
+                   download=download, sleep=lambda _: None)  # fmt: skip

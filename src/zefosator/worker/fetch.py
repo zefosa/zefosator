@@ -1,5 +1,6 @@
 """Download upstream kernel RPMs into the cache and verify them with `rpm -K`."""
 
+import hashlib
 import shutil
 import time
 import urllib.request
@@ -62,6 +63,37 @@ def _download_verified(
     raise BuildError(msg)
 
 
+def sha256_verifier(expected: str) -> Verifier:
+    def verify(path: Path) -> None:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != expected:
+            msg = f"{path.name}: sha256 {digest} does not match the pinned {expected}"
+            raise BuildError(msg)
+
+    return verify
+
+
+def fetch_file(
+    url: str,
+    dest: Path,
+    verify: Verifier,
+    *,
+    download: Downloader = http_download,
+    sleep: Callable[[float], None] = time.sleep,
+) -> Path:
+    """Keep a verified cached `dest`, otherwise download it (with retries) and verify it."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.is_file():
+        try:
+            verify(dest)
+        except BuildError:
+            dest.unlink()
+        else:
+            return dest
+    _download_verified(url, dest, download, verify, sleep)
+    return dest
+
+
 def fetch_all(
     plan: Plan,
     downloads: Path,
@@ -74,16 +106,9 @@ def fetch_all(
     if verify is None:
         import_keys(plan.gpg_keys)
         verify = rpm_verifier(require_signature=bool(plan.gpg_keys))
-    downloads.mkdir(parents=True, exist_ok=True)
     paths: dict[str, Path] = {}
     for pkg in plan.packages:
-        dest = downloads / pkg.file
-        if dest.is_file():
-            try:
-                verify(dest)
-            except BuildError:
-                dest.unlink()
-        if not dest.is_file():
-            _download_verified(pkg.url, dest, download, verify, sleep)
-        paths[pkg.name] = dest
+        paths[pkg.name] = fetch_file(
+            pkg.url, downloads / pkg.file, verify, download=download, sleep=sleep
+        )
     return paths
