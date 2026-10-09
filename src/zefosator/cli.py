@@ -4,7 +4,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from zefosator import keys, podman, signing, verify
+from zefosator import boottest, keys, podman, signing, verify
 from zefosator.config import Plan, load_boot_config, load_plan, project_root
 from zefosator.errors import ConfigError, ZefosatorError
 from zefosator.worker.boot import BootJob
@@ -14,6 +14,7 @@ TARGET_COMMANDS = (
     ("build", "build OpenZFS and repackage the kernel into output/<target-id>/"),
     ("verify", "install output/<target-id>/ in a clean vendor container and check it"),
     ("build-boot", "build shim (and on Fedora the common boot packages) into output/"),
+    ("boottest", "boot the built packages through the Secure Boot chain in QEMU"),
 )
 
 
@@ -33,7 +34,7 @@ def _parser() -> argparse.ArgumentParser:
         )
         if name in {"build", "build-boot"}:
             _signing_arguments(command, unsigned=name == "build")
-        if name == "build-boot":
+        if name in {"build-boot", "boottest"}:
             command.add_argument("--ca-cert", type=Path, help="zefosa CA certificate (PEM or DER)")
     key_parser = commands.add_parser("keys", help="create the Secure Boot CA or a signing leaf")
     key_commands = key_parser.add_subparsers(dest="key_command", required=True)
@@ -67,6 +68,7 @@ def _build(plan: Plan, args: argparse.Namespace) -> None:
         key=args.signing_key, cert=args.signing_cert, unsigned=args.unsigned, env=os.environ
     )
     if source is not None:
+        signing.check_key_location(source, project_root(args.target))
         signing.check_key_matches(source)
         plan = plan.model_copy(update={"signing": signing.describe_cert(source.cert)})
     podman.build(plan, project_root(args.target), signing=source)
@@ -86,6 +88,7 @@ def _build_boot(plan: Plan, args: argparse.Namespace) -> None:
             msg = "--ca-cert is required to build the common boot packages (zefosa-secureboot-ca)"
             raise ConfigError(msg)
         assert source is not None  # noqa: S101 -- resolve_signing(unsigned=False) never returns None
+        signing.check_key_location(source, root)
         signing.check_key_matches(source)
         ca = signing.ca_der(args.ca_cert, source, root / "cache" / "signing" / "ca.der")
         plan = plan.model_copy(update={"signing": signing.describe_cert(source.cert)})
@@ -116,6 +119,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             _build(plan, args)
         elif args.command == "build-boot":
             _build_boot(plan, args)
+        elif args.command == "boottest":
+            if args.ca_cert is None:
+                msg = "--ca-cert is required: boottest enrolls the CA as a MOK key"
+                raise ConfigError(msg)
+            boottest.boottest(plan, project_root(args.target), args.ca_cert.resolve())
         elif args.command == "verify":
             verify.verify(plan, project_root(args.target))
     except ZefosatorError as exc:

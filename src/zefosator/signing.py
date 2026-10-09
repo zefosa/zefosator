@@ -40,12 +40,23 @@ def resolve_signing(
     if not cert.is_file():
         msg = f"signing certificate {cert} not found"
         raise ConfigError(msg)
+    # Absolute paths: they become podman --volume sources, where a relative path is a volume name.
     if key is not None:
         if not key.is_file():
             msg = f"signing key {key} not found"
             raise ConfigError(msg)
-        return SigningInput(cert=cert, key_file=key)
-    return SigningInput(cert=cert, key_pem=key_pem)
+        return SigningInput(cert=cert.resolve(), key_file=key.resolve())
+    return SigningInput(cert=cert.resolve(), key_pem=key_pem)
+
+
+def check_key_location(signing: SigningInput, root: Path) -> None:
+    """The build container mounts the project (/src) and its cache (/cache): keep keys elsewhere."""
+    if signing.key_file is not None and signing.key_file.resolve().is_relative_to(root.resolve()):
+        msg = (
+            f"signing key {signing.key_file} is inside the project tree {root}, which build "
+            "containers mount; keep signing keys outside the project tree"
+        )
+        raise ConfigError(msg)
 
 
 def _openssl(argv: list[str], stdin: bytes | None = None) -> bytes:
