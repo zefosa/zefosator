@@ -134,6 +134,9 @@ def test_refind_package_from_pinned_fedora_rpm(tmp_path: Path, signing_keys: Key
     assert rpm.name == "zefosa-refind-0.14.2-1.x86_64.rpm"
     paths = files_of(rpm)
     assert "/boot/efi/EFI/zefosa/grubx64.efi" in paths
+    modes = {f.path: f.mode for f in read_header(rpm).files}
+    # shared with shim-x64: rpm allows shared directories only with identical attributes
+    assert modes["/boot/efi/EFI/zefosa"] == 0o40700
     assert "/boot/efi/EFI/zefosa/icons/os_zefosa.png" in paths
     out = tmp_path / "x"
     out.mkdir()

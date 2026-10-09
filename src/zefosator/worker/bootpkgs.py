@@ -107,7 +107,9 @@ def _entry(path: str, mode: int, data: bytes = b"") -> FileEntry:
 def _stage(
     root: Path, files: Mapping[str, tuple[bytes, int]], dirs: tuple[str, ...]
 ) -> list[FileEntry]:
-    entries = [_entry(d, 0o40755) for d in dirs]
+    # ESP directories are 0700 like efi-filesystem's and the vendor shim's; a directory shared by
+    # several packages (EFI/zefosa) must have identical attributes in all of them.
+    entries = [_entry(d, 0o40700 if d.startswith("/boot/efi/") else 0o40755) for d in dirs]
     for path, (data, mode) in sorted(files.items()):
         target = root / path.lstrip("/")
         target.parent.mkdir(parents=True, exist_ok=True)
