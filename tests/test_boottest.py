@@ -1,4 +1,6 @@
+import os
 import shutil
+import signal
 import time
 from pathlib import Path
 
@@ -118,3 +120,61 @@ def test_builder_queries_target_packages_from_outside_the_chroot() -> None:
 def test_builder_never_pipes_into_grep_q() -> None:
     # under pipefail, grep -q exiting early SIGPIPEs the producer and fails the step
     assert "| grep -q" not in render_builder_script(PLAN)
+
+
+def _alive(pid: int) -> bool:
+    # a zombie still answers kill(0); count only processes that have not exited
+    stat = Path(f"/proc/{pid}/stat")
+    return stat.exists() and stat.read_text().split(") ", 1)[1][0] != "Z"
+
+
+def _wait_dead(pid: int, seconds: float = 5) -> bool:
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        if not _alive(pid):
+            return True
+        time.sleep(0.1)
+    os.kill(pid, signal.SIGKILL)  # don't leave the stand-in VM behind
+    return False
+
+
+def test_watchdog_stops_vm_when_the_watcher_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    log, pidfile = tmp_path / "serial.log", tmp_path / "vm.pid"
+    real_sleep = time.sleep
+
+    def boom(seconds: float) -> None:
+        while not pidfile.exists():
+            real_sleep(0.05)
+        raise RuntimeError
+
+    monkeypatch.setattr("zefosator.boottest.time.sleep", boom)
+    with pytest.raises(RuntimeError):
+        run_vm(
+            ["sh", "-c", f"echo $$ > {pidfile}; exec sleep 60"], log, VmLimits(idle=30, total=30)
+        )
+    monkeypatch.undo()
+    assert _wait_dead(int(pidfile.read_text()))
+
+
+def test_vm_dies_with_a_killed_zefosator(tmp_path: Path) -> None:
+    import subprocess  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    log, pidfile = tmp_path / "serial.log", tmp_path / "vm.pid"
+    code = (
+        "import sys; from pathlib import Path; from zefosator.boottest import run_vm, VmLimits; "
+        "run_vm(['sh', '-c', f'echo $$ > {sys.argv[1]}; exec sleep 60'], Path(sys.argv[2]), "
+        "VmLimits(idle=60, total=60))"
+    )
+    watcher = subprocess.Popen([sys.executable, "-c", code, str(pidfile), str(log)])
+    try:
+        end = time.monotonic() + 10
+        while not pidfile.exists() and time.monotonic() < end:
+            time.sleep(0.05)
+        os.kill(watcher.pid, signal.SIGKILL)
+        watcher.wait()
+        assert _wait_dead(int(pidfile.read_text()))
+    finally:
+        watcher.kill()

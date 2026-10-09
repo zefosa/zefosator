@@ -6,10 +6,12 @@ firmware -> vendor shim -> zefosa rEFInd -> zefosa ZFSBootMenu -> kexec -> zefos
 Every VM runs on a tight leash (spec section 8): idle and total limits, stop patterns.
 """
 
+import ctypes
 import os
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import time
 from collections.abc import Callable, Sequence
@@ -86,37 +88,63 @@ class VmOutcome:
     returncode: int | None
 
 
+PR_SET_PDEATHSIG = 1
+
+
+def _die_with_parent() -> None:
+    """Runs in the VM child: SIGTERM it when zefosator dies, even by SIGKILL."""
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.prctl(PR_SET_PDEATHSIG, signal.SIGTERM) != 0:
+        raise OSError(ctypes.get_errno(), "prctl(PR_SET_PDEATHSIG) failed")
+
+
+def _stop(process: subprocess.Popen[bytes]) -> None:
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+
+
 def run_vm(argv: Sequence[str], log: Path, limits: VmLimits) -> VmOutcome:
-    """Run a VM with serial output in `log`; kill it on silence, timeout or a stop pattern."""
+    """Run a VM with serial output in `log`; kill it on silence, timeout or a stop pattern.
+
+    The VM never outlives this call: it is stopped on any exception and dies with zefosator.
+    """
     log.unlink(missing_ok=True)
     stderr = log.with_suffix(".stderr")
     with stderr.open("w") as err:
-        process = subprocess.Popen(list(argv), stdout=subprocess.DEVNULL, stderr=err)
-        start = last = time.monotonic()
-        seen = -1
-        reason = ""
-        while process.poll() is None:
-            time.sleep(limits.poll)
-            now = time.monotonic()
-            size = log.stat().st_size if log.exists() else 0
-            if size != seen:
-                seen, last = size, now
-            text = log.read_text(errors="replace") if size else ""
-            hit = next((p for p in limits.stop_patterns if p in text), None)
-            if hit is not None:
-                reason = f"stop pattern {hit!r} seen"
-            elif now - last > limits.idle:
-                reason = f"serial log idle for {now - last:.0f}s"
-            elif now - start > limits.total:
-                reason = f"total time {now - start:.0f}s exceeded"
-            if reason:
-                process.terminate()
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
-                return VmOutcome(killed=True, reason=reason, returncode=process.returncode)
+        process = subprocess.Popen(
+            list(argv),
+            stdout=subprocess.DEVNULL,
+            stderr=err,
+            preexec_fn=_die_with_parent,  # noqa: PLW1509 -- only calls prctl; no threads here
+        )
+        try:
+            start = last = time.monotonic()
+            seen = -1
+            reason = ""
+            while process.poll() is None:
+                time.sleep(limits.poll)
+                now = time.monotonic()
+                size = log.stat().st_size if log.exists() else 0
+                if size != seen:
+                    seen, last = size, now
+                text = log.read_text(errors="replace") if size else ""
+                hit = next((p for p in limits.stop_patterns if p in text), None)
+                if hit is not None:
+                    reason = f"stop pattern {hit!r} seen"
+                elif now - last > limits.idle:
+                    reason = f"serial log idle for {now - last:.0f}s"
+                elif now - start > limits.total:
+                    reason = f"total time {now - start:.0f}s exceeded"
+                if reason:
+                    _stop(process)
+                    return VmOutcome(killed=True, reason=reason, returncode=process.returncode)
+        finally:
+            if process.poll() is None:
+                _stop(process)
     return VmOutcome(killed=False, reason="exited", returncode=process.returncode)
 
 
