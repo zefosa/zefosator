@@ -2,7 +2,7 @@
 
 import time
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, StrictUndefined
@@ -35,6 +35,7 @@ class SpecPackage:
     deps: Mapping[DepKind, Sequence[Dependency]]
     files: Sequence[FileEntry]
     changelog: str
+    scripts: Mapping[str, str] = field(default_factory=dict)  # e.g. {"posttrans": "echo hi"}
 
 
 def render_boot_spec(pkg: SpecPackage, *, payload: str = "w3T.xzdio") -> str:
@@ -50,6 +51,7 @@ def render_boot_spec(pkg: SpecPackage, *, payload: str = "w3T.xzdio") -> str:
         f"{pkg.version}-{pkg.release}",
         changelog=escape(pkg.changelog),
         payload=payload,
+        scripts={name: escape(body) for name, body in pkg.scripts.items()},
     )
 
 

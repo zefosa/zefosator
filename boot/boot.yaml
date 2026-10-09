@@ -23,4 +23,5 @@ ca:
   version: "1"
   release: 1
 tools:
+  version: "1.0"
   release: 1

@@ -1,0 +1,22 @@
+# rEFInd configuration for the zefosa boot chain (shim -> rEFInd -> ZFSBootMenu).
+# Written once by `zefosa-boot setup`; yours to edit. ZFSBootMenu options go in "options";
+# the final OS kernel command line lives in the org.zfsbootmenu:commandline ZFS property
+# (`zefosa-boot cmdline`).
+timeout 5
+scanfor manual
+showtools mok_tool, shell, reboot, shutdown, firmware
+
+menuentry "ZFSBootMenu" {
+    icon    /EFI/zefosa/icons/os_zefosa.png
+    loader  /EFI/zefosa/zfsbootmenu.efi
+    options "zbm.prefer=@POOL@ zbm.timeout=5 ro quiet loglevel=0"
+    submenuentry "Show boot environments" {
+        options "zbm.prefer=@POOL@ zbm.show ro quiet loglevel=0"
+    }
+}
+
+menuentry "ZFSBootMenu recovery" {
+    icon    /EFI/zefosa/icons/os_zefosa.png
+    loader  /EFI/zefosa/zfsbootmenu-recovery.efi
+    options "zbm.prefer=@POOL@ zbm.show ro loglevel=4"
+}

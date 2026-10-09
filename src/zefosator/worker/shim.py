@@ -14,6 +14,7 @@ from zefosator.errors import BuildError
 from zefosator.worker.bootspec import BuildDirs, SpecPackage, render_boot_spec, rpmbuild
 from zefosator.worker.proc import run
 from zefosator.worker.rpmheader import (
+    SENSE_EQUAL,
     SENSE_INTERP,
     SENSE_RPMLIB,
     Dependency,
@@ -80,6 +81,8 @@ def _deps(
         for d in header.dep_list(DepKind.PROVIDE)
         if not (d.name in own and d.version == header.evr)  # rpmbuild adds self-provides
     ]
+    # zefosa-boot requires "the zefosa shim" whatever the distro's shim release is called.
+    deps[DepKind.PROVIDE].append(Dependency("zefosa-shim", SENSE_EQUAL, new_evr))
     for kind in (DepKind.CONFLICT, DepKind.OBSOLETE):
         deps[kind] = list(header.dep_list(kind))
     return deps

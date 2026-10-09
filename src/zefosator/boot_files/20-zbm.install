@@ -1,0 +1,92 @@
+#!/usr/bin/bash
+#
+# 20-zbm.install — kernel-install(8) plugin for ZFSBootMenu systems.
+#
+# Installed by the zefosa-boot package as /usr/lib/kernel/install.d/20-zbm.install;
+# a file of the same name in /etc/kernel/install.d/ overrides it.
+#
+# Replaces the kernel-copying part of grub2-common's 20-grub.install, so the
+# GRUB packages can be removed. Fedora kernel-core packages ship the kernel
+# only as /lib/modules/<ver>/vmlinuz; the /boot/vmlinuz-<ver>, System.map,
+# config and .hmac files are %ghost entries that some plugin must create.
+# ZFSBootMenu scans /boot inside the root dataset for vmlinuz-<ver> +
+# initramfs-<ver>.img pairs, so both must exist there.
+#
+# The initramfs itself is produced by 50-dracut.install: with kernel-install
+# layout "other" (see `kernel-install inspect`) it writes
+# /boot/initramfs-<ver>.img, which is exactly what ZFSBootMenu expects.
+# This plugin runs before it (20 < 50), mirroring the original GRUB ordering.
+#
+# Kernel command line is NOT handled here: ZFSBootMenu reads it from the
+# org.zfsbootmenu:commandline ZFS property, not from BLS entries.
+
+# Positional arguments passed by kernel-install(8) to every plugin:
+#   $1  COMMAND        "add" or "remove"
+#   $2  KERNEL_VERSION e.g. 7.2.9-200.zfs.fc44.x86_64
+#   $3  ENTRY_DIR_ABS  BLS entry dir, e.g. /boot/efi/<machine-id>/<ver>;
+#                      unused here (layout is "other", dir does not exist)
+#   $4  KERNEL_IMAGE   source kernel, e.g. /lib/modules/<ver>/vmlinuz
+#                      ("add" only)
+#   $5… INITRD_OPTIONS extra initrd files given to `kernel-install add`;
+#                      unused here (dracut builds the initramfs)
+#
+# Useful environment variables set by kernel-install (all unused here):
+#   KERNEL_INSTALL_MACHINE_ID, KERNEL_INSTALL_ENTRY_TOKEN,
+#   KERNEL_INSTALL_BOOT_ROOT, KERNEL_INSTALL_LAYOUT,
+#   KERNEL_INSTALL_IMAGE_TYPE, KERNEL_INSTALL_STAGING_AREA,
+#   KERNEL_INSTALL_VERBOSE
+COMMAND="$1"
+KERNEL_VERSION="$2"
+ENTRY_DIR_ABS="$3"
+KERNEL_IMAGE="$4"
+# "remove" passes only 3 arguments; plain `shift 4` would then shift
+# nothing at all, so clamp the shift count.
+shift $(( $# < 4 ? $# : 4 ))
+INITRD_OPTIONS=("$@")
+
+# Directory holding the kernel and its companion files (System.map, config,
+# .vmlinuz.hmac), normally /lib/modules/<ver>.
+KERNEL_DIR="${KERNEL_IMAGE%/*}"
+
+case "$COMMAND" in
+    add)
+        # Kernel already lives in /boot (non-Fedora-style install): nothing
+        # to copy, and cp would fail copying a file onto itself.
+        [[ "$KERNEL_DIR" == /boot ]] && exit 0
+
+        # The kernel image, renamed to the name ZFSBootMenu looks for.
+        cp --remove-destination --preserve=timestamps -T "$KERNEL_IMAGE" "/boot/vmlinuz-$KERNEL_VERSION"
+
+        # Companion files: not needed for booting, but tools such as
+        # crash, kdump or perf expect them next to the kernel.
+        for i in System.map config; do
+            [[ -e "$KERNEL_DIR/$i" ]] && \
+                cp --remove-destination --preserve=timestamps -T "$KERNEL_DIR/$i" "/boot/$i-$KERNEL_VERSION"
+        done
+
+        # FIPS integrity checksum of the kernel; source is named
+        # .vmlinuz.hmac, target must match the renamed kernel.
+        [[ -e "$KERNEL_DIR/.vmlinuz.hmac" ]] && \
+            cp --remove-destination --preserve=timestamps "$KERNEL_DIR/.vmlinuz.hmac" "/boot/.vmlinuz-$KERNEL_VERSION.hmac"
+
+        # Give the copies the proper boot_t SELinux label (cp gives them
+        # the label of the target dir or default, which may differ).
+        command -v restorecon &>/dev/null && \
+            restorecon /boot/{vmlinuz,System.map,config}-"$KERNEL_VERSION" "/boot/.vmlinuz-$KERNEL_VERSION.hmac" 2>/dev/null
+        ;;
+    remove)
+        # Clean up what "add" created. The symvers symlink is created by the
+        # kernel-core %posttrans scriptlet, not by us, but nothing else
+        # removes it once GRUB's hook is gone. The initramfs is a %ghost of
+        # kernel-core and is removed by RPM itself.
+        rm -f /boot/{vmlinuz,System.map,config}-"$KERNEL_VERSION" \
+              "/boot/.vmlinuz-$KERNEL_VERSION.hmac" "/boot/symvers-$KERNEL_VERSION.xz"
+        ;;
+    *)
+        # Unknown command (future kernel-install verbs): ignore.
+        ;;
+esac
+
+# Always succeed: a non-zero exit would abort the remaining plugins
+# (77 would also stop them, silently).
+exit 0

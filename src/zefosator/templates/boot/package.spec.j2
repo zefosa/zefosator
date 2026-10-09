@@ -27,6 +27,11 @@ AutoReqProv: no
 %install
 cp -a %{_zefosa_root}/. %{buildroot}/
 
+{% for name, body in scripts.items() %}
+%{{ name }}
+{{ body }}
+
+{% endfor %}
 %files
 {% for line in files %}
 {{ line }}
