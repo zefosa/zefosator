@@ -1,7 +1,10 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from zefosator.config import load_plan
+import pytest
+
+from zefosator.config import SigningInfo, load_plan
+from zefosator.errors import BuildError
 from zefosator.podman import (
     UV_VERSION,
     build,
@@ -10,6 +13,7 @@ from zefosator.podman import (
     render_containerfile,
     worker_run_argv,
 )
+from zefosator.signing import SigningInput
 
 ROOT = Path(__file__).resolve().parent.parent
 FEDORA = load_plan(ROOT / "targets" / "fedora-44-x86_64.yaml")
@@ -107,3 +111,64 @@ def test_build_reuses_existing_image(tmp_path: Path) -> None:
     podman = FakePodman(image_exists=True)
     build(FEDORA, make_root(tmp_path), execute=podman)
     assert [c[:2] for c in podman.calls] == [["podman", "image"], ["podman", "run"]]
+
+
+class FakeSecrets:
+    def __init__(self) -> None:
+        self.created: list[tuple[str, SigningInput]] = []
+        self.removed: list[str] = []
+
+    def create(self, name: str, signing: SigningInput) -> None:
+        self.created.append((name, signing))
+
+    def remove(self, name: str) -> None:
+        self.removed.append(name)
+
+
+def test_signed_build_passes_key_as_secret_and_removes_it(tmp_path: Path) -> None:
+    root = make_root(tmp_path)
+    cert = tmp_path / "signing.pem"
+    cert.write_text("cert")
+    signing = SigningInput(cert=cert, key_pem="-----BEGIN PRIVATE KEY-----secret")
+    plan = FEDORA.model_copy(
+        update={"signing": SigningInfo(cert_sha256="ab" * 32, cert_subject="CN=x")}
+    )
+    secrets = FakeSecrets()
+    podman = FakePodman(image_exists=True)
+    build(plan, root, signing=signing, execute=podman, secrets=secrets)
+    name = secrets.created[0][0]
+    assert name.startswith("zefosa-signing-")
+    run = podman.calls[-1]
+    assert f"--secret={name},type=mount,target=zefosa-signing-key" in run
+    assert f"--volume={cert}:/signing/cert.pem:ro" in run
+    assert not any("secret" in a for a in run if "PRIVATE" in a)
+    assert secrets.removed == [name]
+    assert "PRIVATE" not in (root / "cache" / "plans" / f"{plan.target_id}.json").read_text()
+
+
+def test_secret_removed_when_worker_fails(tmp_path: Path) -> None:
+    root = make_root(tmp_path)
+    cert = tmp_path / "signing.pem"
+    cert.write_text("cert")
+    secrets = FakeSecrets()
+
+    def failing(argv: Sequence[str]) -> int:
+        return 0 if list(argv[:3]) == ["podman", "image", "exists"] else 3
+
+    with pytest.raises(BuildError):
+        build(
+            FEDORA,
+            root,
+            signing=SigningInput(cert=cert, key_file=cert),
+            execute=failing,
+            secrets=secrets,
+        )
+    assert len(secrets.removed) == 1
+
+
+def test_unsigned_build_has_no_secret(tmp_path: Path) -> None:
+    secrets = FakeSecrets()
+    podman = FakePodman(image_exists=True)
+    build(FEDORA, make_root(tmp_path), signing=None, execute=podman, secrets=secrets)
+    assert secrets.created == []
+    assert not [a for a in podman.calls[-1] if a.startswith("--secret")]

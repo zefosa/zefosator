@@ -1,10 +1,11 @@
 import argparse
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from zefosator import keys, podman, verify
-from zefosator.config import load_plan, project_root
+from zefosator import keys, podman, signing, verify
+from zefosator.config import Plan, load_plan, project_root
 from zefosator.errors import ZefosatorError
 
 TARGET_COMMANDS = (
@@ -28,6 +29,8 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument(
             "--buildid", help="override the kernel release build ID (e.g. zefosa1)"
         )
+        if name == "build":
+            _signing_arguments(command)
     key_parser = commands.add_parser("keys", help="create the Secure Boot CA or a signing leaf")
     key_commands = key_parser.add_subparsers(dest="key_command", required=True)
     ca = key_commands.add_parser("ca", help="create the zefosa Secure Boot CA")
@@ -40,6 +43,28 @@ def _parser() -> argparse.ArgumentParser:
     leaf.add_argument("--cn", default=keys.LEAF_CN)
     leaf.add_argument("--days", type=int, default=keys.LEAF_MAX_DAYS)
     return parser
+
+
+def _signing_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--signing-key", type=Path, help=f"leaf private key (or env {signing.KEY_ENV})"
+    )
+    parser.add_argument(
+        "--signing-cert", type=Path, help=f"leaf certificate (or env {signing.CERT_ENV})"
+    )
+    parser.add_argument(
+        "--unsigned", action="store_true", help="development build: unsigned modules"
+    )
+
+
+def _build(plan: Plan, args: argparse.Namespace) -> None:
+    source = signing.resolve_signing(
+        key=args.signing_key, cert=args.signing_cert, unsigned=args.unsigned, env=os.environ
+    )
+    if source is not None:
+        signing.check_key_matches(source)
+        plan = plan.model_copy(update={"signing": signing.describe_cert(source.cert)})
+    podman.build(plan, project_root(args.target), signing=source)
 
 
 def _keys(args: argparse.Namespace) -> None:
@@ -62,7 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "plan":
             print(plan.model_dump_json(indent=2))
         elif args.command == "build":
-            podman.build(plan, project_root(args.target))
+            _build(plan, args)
         elif args.command == "verify":
             verify.verify(plan, project_root(args.target))
     except ZefosatorError as exc:

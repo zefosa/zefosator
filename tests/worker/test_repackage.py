@@ -1,6 +1,7 @@
 import hashlib
 import lzma
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,8 @@ import pytest
 from tests.worker.upstream import UNAME_R, build_kmod_payload, build_upstream, needs_rpmbuild
 from zefosator.config import load_plan
 from zefosator.errors import BuildError
+from zefosator.keys import KeyPair
+from zefosator.worker.modsign import MODULE_SIG_MAGIC
 from zefosator.worker.repackage import (
     PackageInput,
     RepackContext,
@@ -218,3 +221,34 @@ def test_stage_modules_ignores_build_id_links(tmp_path: Path) -> None:
     )
     assert not [e for e in entries if ".build-id" in e.path]
     assert not (tmp_path / "root" / "usr").exists()
+
+
+def test_stage_modules_signs_before_compressing(
+    tmp_path: Path, signing_keys: tuple[KeyPair, KeyPair]
+) -> None:
+    _, leaf = signing_keys
+    kmod = build_kmod_payload(tmp_path / "kmod")
+    entries = stage_modules(
+        kmod,
+        UNAME_R,
+        tmp_path / "root",
+        compress=True,
+        known_paths=frozenset(),
+        sign=(leaf.key, leaf.cert_pem),
+    )
+    zfs = next(e for e in entries if e.path.endswith("zfs.ko.xz"))
+    data = lzma.decompress((tmp_path / "root" / zfs.path.lstrip("/")).read_bytes())
+    assert data.startswith(b"\x7fELF zfs module")
+    assert data.endswith(MODULE_SIG_MAGIC)
+
+
+@needs_rpmbuild
+def test_repackage_with_signed_modules_passes_comparison(
+    tmp_path: Path, signing_keys: tuple[KeyPair, KeyPair]
+) -> None:
+    _, leaf = signing_keys
+    rpms = build_upstream(tmp_path)
+    kmod = build_kmod_payload(tmp_path / "kmod")
+    signed = replace(context(), sign=(leaf.key, leaf.cert_pem))
+    outputs = repackage(inputs(rpms), signed, paths(tmp_path, kmod))
+    assert len(outputs) == 6

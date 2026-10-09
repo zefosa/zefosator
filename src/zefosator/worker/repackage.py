@@ -14,6 +14,7 @@ from zefosator.config import Role
 from zefosator.errors import BuildError
 from zefosator.worker.compare import diff_headers
 from zefosator.worker.edits import EditContext, apply_edits
+from zefosator.worker.modsign import sign_module
 from zefosator.worker.proc import run
 from zefosator.worker.rpmheader import FILE_GHOST, VERIFY_ALL, FileEntry, Header, read_header
 from zefosator.worker.specgen import render_spec
@@ -50,6 +51,7 @@ class RepackContext:
     zfs_version: str
     zfs_tag: str
     changelog_time: int
+    sign: tuple[Path, Path] | None = None  # (key, cert) for ZFS module signatures
 
 
 def _entry(path: str, mode: int, data: bytes = b"") -> FileEntry:
@@ -67,8 +69,14 @@ def _entry(path: str, mode: int, data: bytes = b"") -> FileEntry:
     )
 
 
-def stage_modules(
-    kmod_root: Path, uname_r: str, root: Path, *, compress: bool, known_paths: frozenset[str]
+def stage_modules(  # noqa: PLR0913 -- module layout, target root and signing are independent inputs
+    kmod_root: Path,
+    uname_r: str,
+    root: Path,
+    *,
+    compress: bool,
+    known_paths: frozenset[str],
+    sign: tuple[Path, Path] | None = None,
 ) -> tuple[FileEntry, ...]:
     """Copy kmod-zfs modules into the build root; return their file entries (new dirs included)."""
     moddir = kmod_root / "lib" / "modules" / uname_r
@@ -100,6 +108,8 @@ def stage_modules(
             (root / parent).mkdir(parents=True, exist_ok=True)
         data = module.read_bytes()
         name = rel.name
+        if sign is not None:
+            data = sign_module(data, *sign)
         if compress and name.endswith(".ko"):
             data = lzma.compress(
                 data, format=lzma.FORMAT_XZ, check=lzma.CHECK_CRC32, filters=_XZ_FILTERS
@@ -205,6 +215,7 @@ def repackage(
                 root,
                 compress=_vendor_compresses_modules(header),
                 known_paths=frozenset(f.path for f in header.files),
+                sign=ctx.sign,
             )
         edit_ctx = EditContext(
             version=ctx.version,

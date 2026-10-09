@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from zefosator.config import load_plan
+from zefosator.config import SigningInfo, load_plan
+from zefosator.errors import BuildError
 from zefosator.worker import build
 from zefosator.worker.repackage import PackageInput, RepackContext, RepackPaths
 from zefosator.worker.zfs import ZfsPaths, ZfsResult
@@ -11,8 +12,24 @@ ROOT = Path(__file__).resolve().parents[2]
 PLAN = load_plan(ROOT / "targets" / "almalinux-9-x86_64.yaml")
 
 
-def test_run_build_runs_stages_in_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("signed", [False, True])
+def test_run_build_runs_stages_in_order(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, signed: bool
+) -> None:
     calls: list[str] = []
+    plan = PLAN
+    expected_sign = None
+    if signed:
+        plan = PLAN.model_copy(
+            update={"signing": SigningInfo(cert_sha256="ab" * 32, cert_subject="CN=x")}
+        )
+        secret = tmp_path / "secret.key"
+        cert = tmp_path / "cert.pem"
+        secret.write_text("key")
+        cert.write_text("cert")
+        monkeypatch.setattr(build, "SECRET_KEY", secret)
+        monkeypatch.setattr(build, "SIGNING_CERT", cert)
+        expected_sign = (secret, cert)
     dirs = build.WorkerDirs(
         src=tmp_path / "src", cache=tmp_path / "cache", output=tmp_path / "output"
     )
@@ -37,6 +54,7 @@ def test_run_build_runs_stages_in_order(tmp_path: Path, monkeypatch: pytest.Monk
         calls.append(f"repackage {len(packages)} {ctx.zefosa_release} {paths.outdir}")
         assert packages[0].name == "kernel"
         assert ctx.changelog_time % 86400 == 43200
+        assert ctx.sign == expected_sign
         return []
 
     def fake_manifest(path: Path, *args: object, **kwargs: object) -> None:
@@ -48,7 +66,7 @@ def test_run_build_runs_stages_in_order(tmp_path: Path, monkeypatch: pytest.Monk
     monkeypatch.setattr(build, "repackage", fake_repackage)
     monkeypatch.setattr(build, "write_manifest", fake_manifest)
 
-    build.run_build(PLAN, dirs)
+    build.run_build(plan, dirs)
 
     devel = rpms["kernel-devel"]
     assert calls == [
@@ -59,3 +77,13 @@ def test_run_build_runs_stages_in_order(tmp_path: Path, monkeypatch: pytest.Monk
         f"manifest {dirs.output / 'manifest.json'}",
     ]
     assert not (dirs.output / "stale").exists()
+
+
+def test_signed_plan_without_secret_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    plan = PLAN.model_copy(
+        update={"signing": SigningInfo(cert_sha256="ab" * 32, cert_subject="CN=x")}
+    )
+    monkeypatch.setattr(build, "SECRET_KEY", tmp_path / "absent")
+    dirs = build.WorkerDirs(src=tmp_path, cache=tmp_path / "cache", output=tmp_path / "out")
+    with pytest.raises(BuildError, match="signing key"):
+        build.run_build(plan, dirs)

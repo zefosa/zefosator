@@ -52,6 +52,7 @@ ignore = [
     "PLR2004", # literal expected values are clearer in tests
     "ARG001",  # fakes must match the signatures they replace
     "ARG002",  # fake methods must match the signatures they replace
+    "FBT001",  # pytest parametrizes booleans as positional arguments
 ]
 "src/zefosator/cli.py" = ["T201"]    # the CLI prints to stdout by design
 "src/zefosator/check.py" = ["T201"]  # the check runner reports progress on stdout

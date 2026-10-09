@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from zefosator.config import Plan
+from zefosator.errors import BuildError
 from zefosator.worker.fetch import fetch_all
 from zefosator.worker.manifest import write_manifest
 from zefosator.worker.proc import run
@@ -13,6 +14,8 @@ from zefosator.worker.repackage import PackageInput, RepackContext, RepackPaths,
 from zefosator.worker.zfs import ZfsPaths, build_zfs
 
 DAY = 86400
+SECRET_KEY = Path("/run/secrets/zefosa-signing-key")  # podman secret, see podman.worker_run_argv
+SIGNING_CERT = Path("/signing/cert.pem")
 
 
 @dataclass(frozen=True)
@@ -35,7 +38,18 @@ def _empty(path: Path) -> None:
             child.unlink()
 
 
+def _signing(plan: Plan) -> tuple[Path, Path] | None:
+    if plan.signing is None:
+        return None
+    for path, what in ((SECRET_KEY, "signing key"), (SIGNING_CERT, "signing certificate")):
+        if not path.is_file():
+            msg = f"plan requires module signing but the {what} {path} is not available"
+            raise BuildError(msg)
+    return SECRET_KEY, SIGNING_CERT
+
+
 def run_build(plan: Plan, dirs: WorkerDirs) -> None:
+    sign = _signing(plan)
     workdir = dirs.cache / "build" / plan.target_id
     logs = workdir / "logs"
     shutil.rmtree(workdir, ignore_errors=True)
@@ -74,6 +88,7 @@ def run_build(plan: Plan, dirs: WorkerDirs) -> None:
             zfs_version=plan.zfs.version,
             zfs_tag=plan.zfs.tag,
             changelog_time=int(time.time()) // DAY * DAY + DAY // 2,
+            sign=sign,
         ),
         RepackPaths(
             kmod_root=zfs.modules_root,

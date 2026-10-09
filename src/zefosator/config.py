@@ -117,6 +117,13 @@ class ResolvedPackage(_Model):
     url: str
 
 
+class SigningInfo(_Model):
+    """Public facts about the signing certificate; the key itself never enters the plan."""
+
+    cert_sha256: str
+    cert_subject: str
+
+
 class Plan(_Model):
     target_id: str
     vendor: str
@@ -135,6 +142,7 @@ class Plan(_Model):
     image: ImageConfig
     gpg_keys: tuple[str, ...]
     packages: tuple[ResolvedPackage, ...]
+    signing: SigningInfo | None = None
 
     def role(self, role: Role) -> ResolvedPackage:
         return next(p for p in self.packages if p.role == role)

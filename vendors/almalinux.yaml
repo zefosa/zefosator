@@ -26,6 +26,7 @@ defaults:
       - libuuid-devel
       - make
       - ncompress
+      - openssl
       - openssl-devel
       - python3
       - python3-cffi
