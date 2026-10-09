@@ -121,7 +121,8 @@ def _generate(job: _Job, flavor: str, conf_dir: Path) -> Path:
     config = {
         "Global": {
             "ManageImages": True,
-            "BootMountPoint": str(job.workdir),
+            # generate-zbm mounts BootMountPoint unless it is a mount point already; "/" always is
+            "BootMountPoint": "/",
             "DracutConfDir": str(conf_dir),
         },
         "Components": {"ImageDir": str(image_dir), "Versions": False, "Enabled": True},

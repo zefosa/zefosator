@@ -136,6 +136,8 @@ def test_dracut_config_forces_zfs_modules_and_recovery_tools(
     assert "/usr/bin/efibootmgr" in tools
     assert regular["Kernel"]["Path"] == f"/lib/modules/{UNAME}/vmlinuz"  # type: ignore[index] # yaml dict
     assert regular["EFI"]["Enabled"] is False  # type: ignore[index] # yaml dict
+    # generate-zbm mounts BootMountPoint unless it already is a mount point
+    assert regular["Global"]["BootMountPoint"] == "/"  # type: ignore[index] # yaml dict
 
 
 def test_image_without_zfs_modules_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
