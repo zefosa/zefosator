@@ -1,3 +1,4 @@
+import hashlib
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -17,6 +18,9 @@ BootOrder: 0001,0000
 Boot0000* rEFInd\tHD(1,GPT,5,0x800,0x200000)/\\EFI\\refind\\refind_x64.efi
 Boot0001* Fedora\tHD(1,GPT,5,0x800,0x200000)/\\EFI\\fedora\\shimx64.efi
 """
+
+
+ESP_MOUNT = ("findmnt", "-no", "TARGET,FSTYPE", "--target")
 
 
 class FakeSystem:
@@ -72,6 +76,7 @@ def setup_system(sb: str = "SecureBoot enabled", *, enrolled: bool = False) -> F
 
 
 def run_setup(system: FakeSystem, esp: Path, template: Path, ca: Path, *extra: str) -> int:
+    system.responses.setdefault(ESP_MOUNT, ok(f"{esp} vfat\n"))
     return cli.main(
         ["setup", "--esp", str(esp), *extra],
         system=system,
@@ -114,6 +119,46 @@ def test_setup_moves_existing_entry_first(tmp_path: Path) -> None:
     assert run_setup(system, esp, template, ca) == 0
     assert ["efibootmgr", "--bootorder", "0007,0001,0000"] in system.calls
     assert not [c for c in system.calls if c[:2] == ["efibootmgr", "--create"]]
+
+
+def test_setup_activates_inactive_existing_entry(tmp_path: Path) -> None:
+    esp, template, ca = esp_tree(tmp_path)
+    system = setup_system()
+    system.responses[("efibootmgr", "-v")] = ok(
+        EFIBOOTMGR + "Boot0007  zefosa\tHD(1,GPT,5,0x800,0x200000)/\\EFI\\zefosa\\shimx64.efi\n"
+    )
+    assert run_setup(system, esp, template, ca) == 0
+    assert ["efibootmgr", "-b", "0007", "-a"] in system.calls
+    assert ["efibootmgr", "--bootorder", "0007,0001,0000"] in system.calls
+
+
+@pytest.mark.parametrize(
+    ("mount", "why"),
+    [("/ xfs\n", "/ (xfs)"), ("{esp} xfs\n", "is xfs, not vfat"), ("/boot vfat\n", "/boot (vfat)")],
+)
+def test_setup_refuses_esp_that_is_not_a_mounted_vfat_partition(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], mount: str, why: str
+) -> None:
+    esp, template, ca = esp_tree(tmp_path)
+    system = setup_system()
+    system.responses[ESP_MOUNT] = ok(mount.format(esp=esp))
+    assert run_setup(system, esp, template, ca) == 1
+    err = capsys.readouterr().err
+    assert f"{esp} is not a mounted EFI System Partition" in err
+    assert why in err
+    assert not (esp / "EFI" / "zefosa" / "refind.conf").exists()
+    assert not [c for c in system.calls if c[0] in {"efibootmgr", "mokutil"}]
+
+
+def test_setup_does_not_reimport_pending_ca(tmp_path: Path) -> None:
+    esp, template, ca = esp_tree(tmp_path)
+    system = setup_system()
+    fingerprint = ":".join(f"{b:02x}" for b in hashlib.sha1(ca.read_bytes()).digest())  # noqa: S324
+    system.responses[("mokutil", "--list-new")] = ok(
+        f"[key 1]\nSHA1 Fingerprint: {fingerprint}\nCertificate:\n"
+    )
+    assert run_setup(system, esp, template, ca) == 0
+    assert not [c for c in system.calls if "--import" in c]
 
 
 def test_setup_imports_ca_when_not_enrolled(tmp_path: Path) -> None:
@@ -165,6 +210,23 @@ def test_status_reports_everything(tmp_path: Path, capsys: pytest.CaptureFixture
     assert "refind.conf pool: zroot" in out
     assert "WARNING: kernel-install layout is 'bls'" in out
     assert "zfsbootmenu-recovery.efi: missing" in out
+
+
+def test_status_reports_pending_ca_and_inactive_entry(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    esp, template, ca = esp_tree(tmp_path)
+    system = setup_system()
+    sha1 = hashlib.sha1(ca.read_bytes()).hexdigest()  # noqa: S324
+    system.responses[("mokutil", "--list-new")] = ok(f"SHA1 Fingerprint: {sha1.upper()}\n")
+    system.responses[("efibootmgr", "-v")] = ok(
+        "BootOrder: 0007\nBoot0007  zefosa\tHD(1)/\\EFI\\zefosa\\shimx64.efi\n"
+    )
+    assert cli.main(["status", "--esp", str(esp)], system=system,
+                    paths=cli.Paths(template=template, ca=ca, efi_vars=esp)) == 0  # fmt: skip
+    out = capsys.readouterr().out
+    assert "zefosa CA: pending" in out
+    assert "Boot entry: Boot0007 (first) (inactive)" in out
 
 
 def test_cmdline_delegates_to_zbm_kcl_for_root_filesystem() -> None:

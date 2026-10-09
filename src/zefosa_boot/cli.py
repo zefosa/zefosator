@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 from dataclasses import dataclass
@@ -77,17 +78,26 @@ def _write_refind(zdir: Path, template: Path, pool: str) -> None:
     _out(f"Wrote {conf} (zbm.prefer={pool})")
 
 
-def _boot_entries(system: System) -> tuple[list[str], dict[str, str]]:
+@dataclass(frozen=True)
+class BootEntries:
+    order: list[str]
+    text: dict[str, str]
+    inactive: set[str]
+
+
+def _boot_entries(system: System) -> BootEntries:
     output = _checked(system, ["efibootmgr", "-v"]).stdout
-    order: list[str] = []
-    entries: dict[str, str] = {}
+    entries = BootEntries([], {}, set())
     for line in output.splitlines():
         if line.startswith("BootOrder:"):
-            order = [n for n in line.split(":", 1)[1].strip().split(",") if n]
-        match = re.match(r"^Boot([0-9A-Fa-f]{4})\*? (.*)$", line)
+            entries.order.extend(n for n in line.split(":", 1)[1].strip().split(",") if n)
+        match = re.match(r"^Boot([0-9A-Fa-f]{4})(\*?) (.*)$", line)
         if match:
-            entries[match.group(1).upper()] = match.group(2)
-    return order, entries
+            number = match.group(1).upper()
+            entries.text[number] = match.group(3)
+            if not match.group(2):
+                entries.inactive.add(number)
+    return entries
 
 
 def _zefosa_entry(entries: dict[str, str]) -> str | None:
@@ -95,6 +105,18 @@ def _zefosa_entry(entries: dict[str, str]) -> str | None:
         if LOADER.lower() in text.lower():
             return number
     return None
+
+
+def _check_esp(system: System, esp: Path) -> None:
+    fields = system.run(["findmnt", "-no", "TARGET,FSTYPE", "--target", str(esp)]).stdout.split()
+    target, fstype = [*fields, "", ""][:2]
+    if target != str(esp) or fstype != "vfat":
+        found = f"is on {target} ({fstype})" if target != str(esp) else f"is {fstype}, not vfat"
+        msg = (
+            f"{esp} is not a mounted EFI System Partition: it {found}. The zefosa boot "
+            "packages install into /boot/efi; mount the ESP there and reinstall them"
+        )
+        raise UserError(msg)
 
 
 def _esp_disk(system: System, esp: Path, sys_block: Path) -> tuple[str, str]:
@@ -112,25 +134,29 @@ def _ensure_entry(system: System, esp: Path, paths: Paths) -> None:
     if not paths.efi_vars.is_dir():
         msg = "this system was not booted in UEFI mode; use --no-firmware"
         raise UserError(msg)
-    order, entries = _boot_entries(system)
-    number = _zefosa_entry(entries)
+    entries = _boot_entries(system)
+    order = entries.order
+    number = _zefosa_entry(entries.text)
     if number is None:
         disk, part = _esp_disk(system, esp, paths.sys_block)
         create = ["efibootmgr", "--create", "--disk", disk, "--part", part]
         _checked(system, [*create, "--label", LABEL, "--loader", LOADER])
         _out(f"Created firmware boot entry '{LABEL}' for {LOADER} (first in BootOrder)")
         return
+    if number in entries.inactive:
+        _checked(system, ["efibootmgr", "-b", number, "-a"])
     if order[:1] != [number]:
         new_order = [number, *(n for n in order if n != number)]
         _checked(system, ["efibootmgr", "--bootorder", ",".join(new_order)])
-    _out(f"Firmware boot entry Boot{number} ({LOADER}) is first in BootOrder")
+    _out(f"Firmware boot entry Boot{number} ({LOADER}) is active and first in BootOrder")
 
 
 def _mok_state(system: System, ca: Path) -> str:
-    text = system.run(["mokutil", "--test-key", str(ca)]).stdout
-    if "already enrolled" in text:
+    if "already enrolled" in system.run(["mokutil", "--test-key", str(ca)]).stdout:
         return "enrolled"
-    if "enrollment request" in text:
+    # --test-key only knows enrolled keys; pending requests are listed by fingerprint
+    pending = system.run(["mokutil", "--list-new"]).stdout.replace(":", "").lower()
+    if ca.is_file() and hashlib.sha1(ca.read_bytes(), usedforsecurity=False).hexdigest() in pending:
         return "pending (confirm in MokManager at next boot)"
     return "not enrolled"
 
@@ -150,6 +176,7 @@ def _ensure_mok(system: System, ca: Path) -> None:
 def setup(args: argparse.Namespace, system: System, paths: Paths) -> None:
     esp = Path(args.esp)
     zdir = esp / "EFI" / "zefosa"
+    _check_esp(system, esp)
     missing = [n for n in REQUIRED if not (zdir / n).is_file()]
     if missing:
         msg = (
@@ -170,11 +197,12 @@ def status(args: argparse.Namespace, system: System, paths: Paths) -> None:
     _out(f"Secure Boot: {'enabled' if 'SecureBoot enabled' in sb else 'disabled or unknown'}")
     _out(f"zefosa CA: {_mok_state(system, paths.ca)}")
     if paths.efi_vars.is_dir():
-        order, entries = _boot_entries(system)
-        number = _zefosa_entry(entries)
+        entries = _boot_entries(system)
+        number = _zefosa_entry(entries.text)
         where = "missing" if number is None else f"Boot{number}"
         if number is not None:
-            where += " (first)" if order[:1] == [number] else " (not first in BootOrder)"
+            where += " (first)" if entries.order[:1] == [number] else " (not first in BootOrder)"
+            where += " (inactive)" if number in entries.inactive else ""
         _out(f"Boot entry: {where}")
     for name in (*REQUIRED, *OPTIONAL):
         _out(f"{zdir / name}: {'present' if (zdir / name).is_file() else 'missing'}")
