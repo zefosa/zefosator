@@ -127,10 +127,94 @@ Disabling the repository returns the system to vendor kernels.
 Use a new repository for these packages: earlier (v1) repositories published OpenZFS with release `1`,
 which sorts above this tool's default release `0`.
 
+## Secure Boot
+
+zefosa systems can boot with UEFI Secure Boot and without GRUB:
+
+```
+firmware ─► vendor shim ─► rEFInd ─► ZFSBootMenu ─kexec─► zefosa kernel ─► signed ZFS modules
+            (Microsoft CA)  (zefosa)   (zefosa)            (vendor-signed)   (zefosa)
+```
+
+Vendor-signed binaries (shim, `vmlinuz`, vendor modules) are never re-signed. zefosa signs only what
+it builds: the ZFS modules, rEFInd and the ZFSBootMenu images, with a leaf key issued by the zefosa
+Secure Boot CA. The CA is enrolled once per machine as a MOK key; the kernel then trusts it for
+modules (`.machine` keyring) and shim trusts it for rEFInd and ZFSBootMenu. ZFSBootMenu is built
+with the zefosa Fedora kernel, which locks down under Secure Boot: it loads only signed modules and
+kexecs only kernels whose signature verifies against the vendor CA that shim provides.
+
+### Keys
+
+```
+uv run zefosator keys ca   --out /secure/zefosa-ca        # keep ca.key offline
+uv run zefosator keys leaf --ca /secure/zefosa-ca --out /secure/zefosa-signing
+```
+
+The CA certificate may only sign certificates (`keyCertSign`, no `digitalSignature`): only such MOK
+keys reach the kernel's `.machine` keyring. Leaves are code-signing certificates valid for at most
+three years; issuing a new leaf needs no action from users. Keys must live **outside** the project
+tree: build containers mount it. The leaf key reaches build containers only as a podman secret.
+
+### Building
+
+```
+uv run zefosator build targets/fedora-44-x86_64.yaml \
+    --signing-key /secure/zefosa-signing/signing.key --signing-cert /secure/zefosa-signing/signing.pem
+uv run zefosator build-boot targets/fedora-44-x86_64.yaml \
+    --signing-key ... --signing-cert ... --ca-cert /secure/zefosa-ca/ca.pem
+uv run zefosator build-boot targets/almalinux-9-x86_64.yaml     # shim only, no key needed
+```
+
+Instead of `--signing-key`, the key's PEM text may come from `ZEFOSA_SIGNING_KEY` (and the
+certificate path from `ZEFOSA_SIGNING_CERT`). `build --unsigned` makes a development build.
+
+`build-boot` repackages the vendor `shim-x64` for every target into `output/<target-id>/boot/`
+(EFI binaries byte-identical, GRUB requirements dropped, installed in `\EFI\zefosa\`). On the
+Fedora target it also builds the distro-independent packages into `output/boot/`:
+
+| Package | Contents |
+|---|---|
+| `zefosa-secureboot-ca` | `/usr/share/zefosa/keys/zefosa-ca.{der,pem,sha256}` |
+| `zefosa-refind` | Fedora's rEFInd (pinned in `boot/boot.yaml`), signed, as `\EFI\zefosa\grubx64.efi` |
+| `zefosa-zfsbootmenu`, `zefosa-zfsbootmenu-recovery` | signed ZFSBootMenu UKIs (recovery adds rescue tools) |
+| `zefosa-boot` | `zefosa-boot` command, `zbm-kcl`, the `20-zbm.install` kernel-install plugin; replaces GRUB |
+
+Rebuild the ZFSBootMenu images (bump `release` in `boot/boot.yaml`) after zefosa Fedora kernel or
+ZFSBootMenu updates.
+
+### Testing in QEMU
+
+```
+uv run zefosator boottest targets/fedora-44-x86_64.yaml --ca-cert /secure/zefosa-ca/ca.pem
+```
+
+A builder VM installs a root-on-ZFS system with the built kernel and boot packages, then the target
+boots with OVMF Secure Boot and the CA pre-enrolled as MOK. Checks: Secure Boot on, lockdown
+`integrity`, root on ZFS, `zfs` signed by the CA, CA in `.machine`, a kernel without signature
+refused by ZFSBootMenu, an unsigned ZFSBootMenu image refused by shim. Needs `qemu-system-x86-core`,
+`qemu-img`, `guestfs-tools`, `libguestfs`, `python3-virt-firmware`, `sbsigntools` and `edk2-ovmf`.
+
+### On a machine
+
+```
+dnf install zefosa-boot             # from the zefosa-boot repository; replaces shim-x64 and grub2-efi-x64
+zefosa-boot setup                   # refind.conf, firmware boot entry, CA enrollment request
+reboot                              # MokManager: Enroll MOK -> Continue -> Yes -> root password
+zefosa-boot status
+zefosa-boot cmdline -r quiet -a loglevel=7    # final OS kernel command line (zbm-kcl)
+```
+
+On AlmaLinux, dnf 4 counts replacing the protected `grub2-efi-x64` as removing it and refuses;
+install with `dnf install --setopt=protected_packages= zefosa-boot` (Fedora's dnf 5 needs no option).
+
+`/boot/efi/EFI/zefosa/refind.conf` holds the ZFSBootMenu options (`zbm.prefer=<pool>`, timeout,
+recovery entry) and is never overwritten. The firmware entry starts
+`\EFI\zefosa\shimx64.efi` without load options, so firmware that drops boot options still works.
+
 ## Limitations
 
-- Repackaged packages are unsigned: AlmaLinux signatures and IMA file signatures (EL kernels ship
-  them) cannot be carried over. Sign the packages or the repository when publishing.
+- Repackaged packages are unsigned at the RPM level: AlmaLinux RPM signatures and IMA file signatures
+  (EL kernels ship them) cannot be carried over. Sign the packages or the repository when publishing.
 - Upstream inputs are verified before use: AlmaLinux packages by signature, Fedora Koji packages
   (unsigned) by digest.
 - Scriptlet triggers and file triggers are not supported; a vendor package using an unknown header
