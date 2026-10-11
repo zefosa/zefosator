@@ -5,8 +5,8 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from zefosator import boottest, keys, pack, podman, signing, verify
-from zefosator.config import Plan, load_boot_config, load_plan, project_root
+from zefosator import boottest, keys, pack, podman, signing, upload, verify
+from zefosator.config import Plan, load_boot_config, load_common_config, load_plan, project_root
 from zefosator.errors import ConfigError, ZefosatorError
 from zefosator.worker.boot import BootJob
 
@@ -17,6 +17,7 @@ TARGET_COMMANDS = (
     ("build-boot", "build shim (and on Fedora the common boot packages) into output/"),
     ("boottest", "boot the built packages through the Secure Boot chain in QEMU"),
     ("pack", "pack built RPMs into the tar + sha256 archives listed under archives:"),
+    ("upload", "publish packed archives to upload.webdav_url in common.yaml"),
 )
 
 
@@ -36,9 +37,21 @@ def _parser() -> argparse.ArgumentParser:
         )
         if name in {"build", "build-boot"}:
             _signing_arguments(command, unsigned=name == "build")
-        if name == "pack":
+        if name in {"pack", "upload"}:
             command.add_argument(
-                "names", nargs="*", metavar="ARCHIVE", help="archives to pack (default: all)"
+                "names", nargs="*", metavar="ARCHIVE", help=f"archives to {name} (default: all)"
+            )
+        if name == "upload":
+            command.add_argument(
+                "--upload-key-file",
+                type=Path,
+                help=f"file holding the key (or env {upload.KEY_ENV})",
+            )
+            command.add_argument(
+                "--force", action="store_true", help="upload even archives published unchanged"
+            )
+            command.add_argument(
+                "--dry-run", action="store_true", help="only report what would be uploaded"
             )
         if name in {"build-boot", "boottest"}:
             command.add_argument("--ca-cert", type=Path, help="zefosa CA certificate (PEM or DER)")
@@ -128,6 +141,20 @@ def _keys(args: argparse.Namespace) -> None:
     print(f"SHA-256 fingerprint (DER): {pair.sha256}")
 
 
+def _upload(plan: Plan, args: argparse.Namespace) -> None:
+    root = project_root(args.target)
+    config = load_common_config(root).upload
+    if config is None:
+        msg = f"{root / 'common.yaml'} has no upload section (upload.webdav_url)"
+        raise ConfigError(msg)
+    key = upload.resolve_upload_key(args.upload_key_file, root)
+    share = upload.WebDavShare(config.webdav_url, key)
+    for outcome in upload.upload(
+        plan, root, args.names, share, force=args.force, dry_run=args.dry_run
+    ):
+        print(f"{outcome.name}: {outcome.action} ({outcome.size} bytes, sha256 {outcome.sha256})")
+
+
 def _target_command(plan: Plan, args: argparse.Namespace) -> None:
     if args.command == "plan":
         print(plan.model_dump_json(indent=2))
@@ -145,6 +172,8 @@ def _target_command(plan: Plan, args: argparse.Namespace) -> None:
     elif args.command == "pack":
         for archive in pack.pack(plan, project_root(args.target), args.names):
             print(f"{archive.tar} ({archive.size} bytes) sha256 {archive.sha256}")
+    elif args.command == "upload":
+        _upload(plan, args)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

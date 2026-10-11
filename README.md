@@ -32,6 +32,7 @@ uv run zefosator plan   targets/fedora-44-x86_64.yaml   # show the resolved plan
 uv run zefosator build  targets/fedora-44-x86_64.yaml   # build into output/fedora-44-x86_64/
 uv run zefosator verify targets/fedora-44-x86_64.yaml   # install and check in a clean container
 uv run zefosator pack   targets/fedora-44-x86_64.yaml   # tar + sha256 archives for publishing
+uv run zefosator upload targets/fedora-44-x86_64.yaml   # publish the archives that changed
 ```
 
 `build` writes:
@@ -135,6 +136,25 @@ uv run zefosator pack targets/fedora-44-x86_64.yaml fedora44-x86_64-zfs-kernel-p
 - Every file must be listed, with a matching checksum, in the `manifest.json` of the build that
   produced it; otherwise `pack` names each offending file and writes nothing. A failed or
   interrupted run never leaves a `.sha256` that does not describe its tar.
+
+### Publishing
+
+```
+uv run zefosator upload targets/fedora-44-x86_64.yaml                # every archive
+uv run zefosator upload targets/fedora-44-x86_64.yaml NAME --dry-run # report only
+```
+
+- `upload` puts `<name>.tar` and then `<name>.sha256` to `upload.webdav_url` from `common.yaml`
+  (a Nextcloud public share: the share token is the user name, the password is empty). An
+  archive whose published `.sha256` already matches is skipped (`--force` uploads it anyway);
+  reproducible builds make that the common case. The share must allow reading; listing is not
+  needed. After uploading, the `.sha256` is read back to check it.
+- The key comes from `--upload-key-file` (mode 0600, outside the project tree), else
+  `ZEFOSA_UPLOAD_KEY`, else a prompt on a terminal. It never appears on a command line or in
+  output, travels only over https (plain http only to this machine), and is not forwarded on
+  redirects, which are refused.
+- Local archives must match their `.sha256`, as `pack` wrote them; network errors and 5xx
+  responses are retried.
 
 ## Reproducible builds
 

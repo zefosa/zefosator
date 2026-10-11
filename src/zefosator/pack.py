@@ -20,7 +20,7 @@ class PackedArchive:
     size: int
 
 
-def _select(plan: Plan, names: Sequence[str]) -> list[ArchivePlan]:
+def select_archives(plan: Plan, names: Sequence[str]) -> list[ArchivePlan]:
     defined = {archive.name: archive for archive in plan.archives}
     if not defined:
         msg = f"{plan.target_id}: the target file defines no archives"
@@ -106,7 +106,7 @@ def _write(
 
 def pack(plan: Plan, root: Path, names: Sequence[str]) -> list[PackedArchive]:
     """Write output/<target-id>/archives/<name>.{tar,sha256}; all archives when names is empty."""
-    archives = _select(plan, names)
+    archives = select_archives(plan, names)
     output = root / "output"
     manifests = _Manifests(output)
     files = dict.fromkeys(rel for archive in archives for rel in archive.files)
