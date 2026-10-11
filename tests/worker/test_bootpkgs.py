@@ -168,6 +168,8 @@ def test_refind_package_refuses_an_rpm_of_another_version(
     pin = CONFIG.refind.model_copy(update={"sha256": hashlib.sha256(b"stand-in").hexdigest()})
     config = CONFIG.model_copy(update={"refind": pin})
     monkeypatch.setattr(bootpkgs, "read_header", lambda _: SimpleNamespace(version="0.14.1"))
-    with pytest.raises(BuildError, match=r"version 0\.14\.1, but refind\.version is 0\.14\.2"):
+    with pytest.raises(
+        BuildError, match=r"version 0\.14\.1, but boot\.refind\.version is 0\.14\.2 in common\.yaml"
+    ):
         build_refind_package(config, rpm, (tmp_path / "k", tmp_path / "c"), build_dirs(tmp_path))
     assert not (tmp_path / "out").exists()

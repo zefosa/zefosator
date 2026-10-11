@@ -417,7 +417,7 @@ def _archive_plans(
     target: TargetFile, plan: Plan, root: Path, target_path: Path
 ) -> tuple[ArchivePlan, ...]:
     variables: dict[str, object] = plan.model_dump(mode="json")
-    if (root / "boot" / "boot.yaml").is_file():
+    if (root / "common.yaml").is_file():
         variables["boot_packages"] = load_boot_config(root).model_dump(mode="json")
     return tuple(
         ArchivePlan(name=name, files=_archive_files(name, files, variables, target_path))
@@ -484,14 +484,42 @@ class BootConfig(_Model):
     tools: VersionPin
 
 
-def load_boot_config(root: Path) -> BootConfig:
-    path = root / "boot" / "boot.yaml"
+class UploadConfig(_Model):
+    webdav_url: str  # archives go to <webdav_url><name>.tar and <name>.sha256
+
+    @field_validator("webdav_url")
+    @classmethod
+    def _http_directory(cls, value: str) -> str:
+        if not value.startswith(("https://", "http://")) or len(value.split("://", 1)[1]) == 0:
+            msg = f"expected an http(s) URL, got {value!r}"
+            raise ValueError(msg)
+        return value if value.endswith("/") else value + "/"
+
+
+class CommonConfig(_Model):
+    """common.yaml: settings shared by every target."""
+
+    boot: BootConfig
+    upload: UploadConfig | None = None
+
+
+def load_common_config(root: Path) -> CommonConfig:
+    """common.yaml; its string values are Jinja2 templates over the file's own values."""
+    path = root / "common.yaml"
+    old = root / "boot" / "boot.yaml"
+    if old.exists():
+        msg = f"{old}: moved to the boot section of {path}; delete the old file"
+        raise ConfigError(msg)
     raw = _load_yaml(path)
     rendered = {k: _render_strings(v, raw, f"{path}: {k}") for k, v in raw.items()}
     try:
-        return BootConfig.model_validate(rendered)
+        return CommonConfig.model_validate(rendered)
     except ValidationError as exc:
         raise _validation_error(str(path), exc) from exc
+
+
+def load_boot_config(root: Path) -> BootConfig:
+    return load_common_config(root).boot
 
 
 def _boot_plan(

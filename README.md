@@ -54,6 +54,10 @@ Downloads and OpenZFS clones are cached in `cache/`; logs of the last build are 
 
 ## Targets and vendors
 
+`common.yaml` holds what every target shares: the boot package pins (`boot`) and where archives
+are published (`upload`). Its string values are Jinja2 templates over the file's own values (e.g.
+`{{ boot.refind.version }}`).
+
 A target file pins one kernel and one OpenZFS version:
 
 ```yaml
@@ -122,7 +126,7 @@ uv run zefosator pack targets/fedora-44-x86_64.yaml fedora44-x86_64-zfs-kernel-p
 - Paths are relative to `output/` and are Jinja2 templates rendered with the resolved plan: every
   field `zefosator plan` prints (`target_id`, `kernel_version`, `zefosa_release`, `uname_r`, `dist`,
   `arch`, `os_major`, `zfs.version`, `zfs.release`, `boot.shim_release`, …), plus `boot_packages`:
-  the pins of `boot/boot.yaml` (`zfsbootmenu`, `refind`, `ca`, `tools`, each with `version` and
+  the `boot` section of `common.yaml` (`zfsbootmenu`, `refind`, `ca`, `tools`, each with `version` and
   `release`). `zefosator plan` shows the rendered file lists.
 - `pack` writes `output/<target-id>/archives/<name>.tar` and `<name>.sha256` (`sha256sum -c`
   format). Files are stored side by side without directories, owned by root with mode 0644 and
@@ -230,16 +234,16 @@ Fedora target it also builds the distro-independent packages into `output/boot/`
 | Package | Contents |
 |---|---|
 | `zefosa-secureboot-ca` | `/usr/share/zefosa/keys/zefosa-ca.{der,pem,sha256}` |
-| `zefosa-refind` | Fedora's rEFInd (pinned in `boot/boot.yaml`), signed, as `\EFI\zefosa\grubx64.efi` |
+| `zefosa-refind` | Fedora's rEFInd (pinned in `common.yaml`), signed, as `\EFI\zefosa\grubx64.efi` |
 | `zefosa-zfsbootmenu`, `zefosa-zfsbootmenu-recovery` | signed ZFSBootMenu UKIs (recovery adds rescue tools) |
 | `zefosa-boot` | `zefosa-boot` command, `zbm-kcl`, the `20-zbm.install` kernel-install plugin; replaces GRUB |
 
-String values in `boot/boot.yaml` are Jinja2 templates rendered with the file's own values: the
-rEFInd download URL is built from `refind.version` and `refind.upstream_release` (Fedora's
-release), while `refind.release` is the `zefosa-refind` package release. The build refuses an
-rEFInd RPM whose version differs from `refind.version`.
+Their inputs are pinned in the `boot` section of `common.yaml`. The rEFInd download URL is built
+from `boot.refind.version` and `boot.refind.upstream_release` (Fedora's release), while
+`boot.refind.release` is the `zefosa-refind` package release. The build refuses an rEFInd RPM
+whose version differs from `boot.refind.version`.
 
-Rebuild the ZFSBootMenu images (bump `release` in `boot/boot.yaml`) after zefosa Fedora kernel or
+Rebuild the ZFSBootMenu images (bump `boot.zfsbootmenu.release` in `common.yaml`) after zefosa Fedora kernel or
 ZFSBootMenu updates.
 
 ### Testing in QEMU

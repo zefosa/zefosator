@@ -172,8 +172,8 @@ def build_refind_package(
     upstream = read_header(refind_rpm)
     if upstream.version != config.refind.version:
         msg = (
-            f"{refind_rpm.name}: rEFInd version {upstream.version}, but refind.version is "
-            f"{config.refind.version} in boot/boot.yaml"
+            f"{refind_rpm.name}: rEFInd version {upstream.version}, but boot.refind.version is "
+            f"{config.refind.version} in common.yaml"
         )
         raise BuildError(msg)
     dirs = _fresh(build, "refind")

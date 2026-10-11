@@ -226,37 +226,37 @@ def test_plan_round_trips_through_json() -> None:
     assert Plan.model_validate_json(plan.model_dump_json()) == plan
 
 
-def archive_root(tmp_path: Path, archives: str, *, boot_yaml: str | None = None) -> Path:
+def archive_root(tmp_path: Path, archives: str, *, common_yaml: str | None = None) -> Path:
     target = make_root(
         tmp_path, target=MINI_TARGET.format(os_version="9.8", arch="x86_64") + archives
     )
-    if boot_yaml is not None:
-        (tmp_path / "boot").mkdir()
-        (tmp_path / "boot" / "boot.yaml").write_text(boot_yaml)
+    if common_yaml is not None:
+        (tmp_path / "common.yaml").write_text(common_yaml)
     return target
 
 
-BOOT_YAML = """\
-zfsbootmenu:
-  version: "3.2.0"
-  repo: https://example.org/zfsbootmenu.git
-  tag: v3.2.0
-  release: 4
-  build_packages: [dracut]
-  recovery_packages: []
-  recovery_tools: []
-refind:
-  version: "0.15.0"
-  upstream_release: "1.fc50"
-  release: 2
-  url: https://example.org/refind.rpm
-  sha256: b00339df78acc802151275a0afddfa3d368ba5aaaa357cea44681b781033fc8b
-ca:
-  version: "3"
-  release: 5
-tools:
-  version: "1.1"
-  release: 6
+COMMON_YAML = """\
+boot:
+  zfsbootmenu:
+    version: "3.2.0"
+    repo: https://example.org/zfsbootmenu.git
+    tag: v3.2.0
+    release: 4
+    build_packages: [dracut]
+    recovery_packages: []
+    recovery_tools: []
+  refind:
+    version: "0.15.0"
+    upstream_release: "1.fc50"
+    release: 2
+    url: https://example.org/refind.rpm
+    sha256: b00339df78acc802151275a0afddfa3d368ba5aaaa357cea44681b781033fc8b
+  ca:
+    version: "3"
+    release: 5
+  tools:
+    version: "1.1"
+    release: 6
 """
 
 
@@ -304,7 +304,7 @@ archives:
     - "boot/zefosa-secureboot-ca-{nvr("ca")}.noarch.rpm"
     - "boot/zefosa-boot-{nvr("tools")}.noarch.rpm"
 """,
-        boot_yaml=BOOT_YAML,
+        common_yaml=COMMON_YAML,
     )
     (archive,) = load_plan(target).archives
     assert archive.files == (
