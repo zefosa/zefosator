@@ -1,6 +1,7 @@
 import hashlib
 import lzma
 import subprocess
+import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from zefosator.worker.repackage import (
     repackage,
     stage_modules,
 )
+from zefosator.worker.repro import rpm_buildtime
 from zefosator.worker.rpmheader import (
     SENSE_EQUAL,
     SENSE_GREATER,
@@ -33,6 +35,8 @@ from zefosator.worker.rpmheader import (
 ROOT = Path(__file__).resolve().parents[2]
 DOWNLOADS = ROOT / "cache" / "downloads"
 
+EPOCH = 1791056615  # e.g. the vendor kernel's build time
+
 
 def context() -> RepackContext:
     return RepackContext(
@@ -44,6 +48,7 @@ def context() -> RepackContext:
         zfs_version="2.4.4",
         zfs_tag="zfs-2.4.4",
         changelog_time=1791892800,
+        source_date_epoch=EPOCH,
     )
 
 
@@ -177,6 +182,7 @@ def test_repackage_real_upstream_packages(tmp_path: Path, target: str) -> None:
         zfs_version=plan.zfs.version,
         zfs_tag=plan.zfs.tag,
         changelog_time=1791892800,
+        source_date_epoch=EPOCH,
     )
     moddir = tmp_path / "kmod" / "lib" / "modules" / plan.uname_r / "extra" / "zfs"
     moddir.mkdir(parents=True)
@@ -253,3 +259,23 @@ def test_repackage_with_signed_modules_passes_comparison(
     signed = replace(context(), sign=(leaf.key, leaf.cert_pem))
     outputs = repackage(inputs(rpms), signed, paths(tmp_path, kmod))
     assert len(outputs) == 6
+
+
+@needs_rpmbuild
+def test_repackage_is_reproducible(tmp_path: Path) -> None:
+    (tmp_path / "upstream").mkdir()
+    rpms = build_upstream(tmp_path / "upstream")
+    kmod = build_kmod_payload(tmp_path / "kmod")
+    first = repackage(inputs(rpms), context(), paths(tmp_path / "1", kmod))
+    time.sleep(1.1)  # the wall clock must not matter
+    second = repackage(inputs(rpms), context(), paths(tmp_path / "2", kmod))
+    for a, b in zip(first, second, strict=True):
+        assert a.read_bytes() == b.read_bytes(), f"{a.name} differs between two repackagings"
+        assert rpm_buildtime(a) == EPOCH
+        host = subprocess.run(
+            ["rpm", "-qp", "--qf", "%{BUILDHOST}", str(a)],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert host.stdout == "zefosa"

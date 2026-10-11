@@ -51,6 +51,7 @@ class RepackContext:
     zfs_version: str
     zfs_tag: str
     changelog_time: int
+    source_date_epoch: int  # build time, and the newest file time rpmbuild records
     sign: tuple[Path, Path] | None = None  # (key, cert) for ZFS module signatures
 
 
@@ -249,6 +250,7 @@ def repackage(
             f"_zefosa_root {root}",
             str(spec),
         ],
+        env={**os.environ, "SOURCE_DATE_EPOCH": str(ctx.source_date_epoch)},
         log=paths.logs / "rpmbuild.log",
     )
 

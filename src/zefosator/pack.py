@@ -9,6 +9,7 @@ from pathlib import Path
 from zefosator.config import ArchivePlan, Plan
 from zefosator.errors import BuildError, ConfigError
 from zefosator.worker.manifest import sha256
+from zefosator.worker.repro import rpm_buildtime
 
 
 @dataclass(frozen=True)
@@ -67,12 +68,12 @@ class _Manifests:
         return "no manifest.json records it"
 
 
-def _add(tar: tarfile.TarFile, path: Path) -> None:
-    """Flat, owner-neutral members: the same files always give the same archive."""
+def _add(tar: tarfile.TarFile, path: Path, mtime: int) -> None:
+    """Flat, owner-neutral members timed by the RPM's build time: the same RPMs always give the
+    same archive, wherever and whenever they were copied."""
     info = tarfile.TarInfo(path.name)
-    stat = path.stat()
-    info.size = stat.st_size
-    info.mtime = int(stat.st_mtime)
+    info.size = path.stat().st_size
+    info.mtime = mtime
     info.mode = 0o644
     info.uid = info.gid = 0
     info.uname = info.gname = "root"
@@ -80,13 +81,15 @@ def _add(tar: tarfile.TarFile, path: Path) -> None:
         tar.addfile(info, handle)
 
 
-def _write(archive: ArchivePlan, output: Path, dest: Path) -> PackedArchive:
+def _write(
+    archive: ArchivePlan, output: Path, dest: Path, buildtimes: dict[str, int]
+) -> PackedArchive:
     tar_path, checksum = dest / f"{archive.name}.tar", dest / f"{archive.name}.sha256"
     tmp_tar, tmp_sum = dest / f".{tar_path.name}.tmp", dest / f".{checksum.name}.tmp"
     try:
         with tarfile.open(tmp_tar, "w", format=tarfile.PAX_FORMAT) as tar:
             for rel in archive.files:
-                _add(tar, output / rel)
+                _add(tar, output / rel, buildtimes[rel])
         digest = sha256(tmp_tar)
         tmp_sum.write_text(f"{digest}  {tar_path.name}\n")
         # never leave a checksum next to a tar it does not describe
@@ -107,10 +110,19 @@ def pack(plan: Plan, root: Path, names: Sequence[str]) -> list[PackedArchive]:
     output = root / "output"
     manifests = _Manifests(output)
     files = dict.fromkeys(rel for archive in archives for rel in archive.files)
-    problems = [f"{rel}: {problem}" for rel in files if (problem := manifests.problem(rel))]
+    problems, buildtimes = [], {}
+    for rel in files:
+        problem = manifests.problem(rel)
+        if problem is None:
+            try:
+                buildtimes[rel] = rpm_buildtime(output / rel)
+            except ValueError as exc:
+                problem = str(exc)
+        if problem is not None:
+            problems.append(f"{rel}: {problem}")
     if problems:
         msg = "cannot pack: these files do not match the build outputs\n  " + "\n  ".join(problems)
         raise BuildError(msg)
     dest = output / plan.target_id / "archives"
     dest.mkdir(parents=True, exist_ok=True)
-    return [_write(archive, output, dest) for archive in archives]
+    return [_write(archive, output, dest, buildtimes) for archive in archives]

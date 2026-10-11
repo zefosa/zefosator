@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import subprocess
 import tarfile
 from collections.abc import Callable
@@ -7,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.rpmfiles import fake_rpm
 from tests.test_config import MINI_TARGET, make_root
 from zefosator.cli import main
 from zefosator.config import load_plan
@@ -26,13 +28,17 @@ archives:
 """
 
 
+BUILDTIMES = {b"zfs": 1787329187, b"kern": 1791056615, b"shim": 1780000000, b"boot": 1785000000}
+
+
 def write_outputs(output: Path, manifest_dir: str, files: dict[str, bytes]) -> None:
-    """Write files under output/<manifest_dir>/ and record them in its manifest.json."""
+    """Write RPMs under output/<manifest_dir>/ and record them in its manifest.json."""
     base = output / manifest_dir
     entries = []
-    for rel, data in files.items():
+    for rel, payload in files.items():
         (base / rel).parent.mkdir(parents=True, exist_ok=True)
-        (base / rel).write_bytes(data)
+        fake_rpm(base / rel, buildtime=BUILDTIMES[payload], payload=payload)
+        data = (base / rel).read_bytes()
         entries.append({"path": rel, "nevra": rel, "sha256": hashlib.sha256(data).hexdigest()})
     (base / "manifest.json").write_text(json.dumps({"outputs": entries}))
 
@@ -64,13 +70,14 @@ def test_pack_writes_a_flat_tar_and_its_checksum(tmp_path: Path, target: Path) -
             "zefosa-boot.rpm",
             "shim.rpm",
         ]
+        assert [m.mtime for m in members] == [1787329187, 1791056615, 1785000000, 1780000000]
         for member in members:
             assert member.isreg()
             assert (member.uid, member.gid, member.uname, member.gname) == (0, 0, "root", "root")
             assert member.mode == 0o644
         extracted = tar.extractfile("shim.rpm")
         assert extracted is not None
-        assert extracted.read() == b"shim"
+        assert extracted.read().endswith(b"shim")
     digest = hashlib.sha256(archive.tar.read_bytes()).hexdigest()
     assert archive.sha256 == digest
     assert archive.size == archive.tar.stat().st_size
@@ -89,10 +96,24 @@ def test_pack_writes_a_flat_tar_and_its_checksum(tmp_path: Path, target: Path) -
     ]
 
 
-def test_pack_is_deterministic(tmp_path: Path, target: Path) -> None:
+def test_pack_depends_only_on_the_rpms(tmp_path: Path, target: Path) -> None:
     (first,) = pack(load_plan(target), tmp_path, ["mini-zfs"])
+    for rpm in (tmp_path / "output").rglob("*.rpm"):  # e.g. copied between CI jobs
+        os.utime(rpm, (1_000_000_000, 1_000_000_000))
     (second,) = pack(load_plan(target), tmp_path, ["mini-zfs"])
     assert first.sha256 == second.sha256
+
+
+def test_pack_refuses_a_file_that_is_not_an_rpm(tmp_path: Path, target: Path) -> None:
+    write_outputs(tmp_path / "output", "boot", {"zefosa-boot.rpm": b"boot"})
+    bogus = tmp_path / "output" / "boot" / "zefosa-boot.rpm"
+    bogus.write_bytes(b"not an rpm")
+    manifest = {"outputs": [{"path": "zefosa-boot.rpm", "nevra": "x",
+                             "sha256": hashlib.sha256(b"not an rpm").hexdigest()}]}  # fmt: skip
+    (tmp_path / "output" / "boot" / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(BuildError, match=r"boot/zefosa-boot\.rpm: zefosa-boot\.rpm: not an RPM"):
+        pack(load_plan(target), tmp_path, ["mini-zfs"])
+    assert not archives_dir(tmp_path).exists()
 
 
 def test_pack_without_names_packs_every_archive(tmp_path: Path, target: Path) -> None:
@@ -115,7 +136,7 @@ def unrecord_shim(output: Path) -> None:
 
 
 def change_boot(output: Path) -> None:
-    (output / "boot" / "zefosa-boot.rpm").write_bytes(b"rebuilt by hand")
+    fake_rpm(output / "boot" / "zefosa-boot.rpm", buildtime=1, payload=b"rebuilt by hand")
 
 
 def remove_boot_manifest(output: Path) -> None:

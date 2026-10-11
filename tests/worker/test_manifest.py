@@ -24,6 +24,7 @@ def test_manifest_lists_inputs_outputs_and_zfs(tmp_path: Path) -> None:
         "0123abcd",
         [out],
         nevra=lambda p: f"nevra-of-{p.name}",
+        source_date_epochs={"zfs": 1787329187, "kernel": 1791056615},
     )
     data = json.loads(manifest.read_text())
     assert data["plan"]["zefosa_release"] == "200.zefosa.fc44"
@@ -33,6 +34,7 @@ def test_manifest_lists_inputs_outputs_and_zfs(tmp_path: Path) -> None:
         "cherry_picks": [],
         "patches": [],
     }
+    assert data["source_date_epochs"] == {"zfs": 1787329187, "kernel": 1791056615}
     assert data["inputs"] == [
         {
             "name": "kernel-core",

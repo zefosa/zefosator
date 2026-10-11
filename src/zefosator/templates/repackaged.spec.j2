@@ -7,9 +7,12 @@
 %undefine _missing_build_ids_terminate_build
 %global _binary_payload {{ payload }}
 %global _binary_filedigest_algorithm {{ digest_algo }}
+# Reproducible: SOURCE_DATE_EPOCH (never older than any vendor file, so vendor file times stay)
+# is the build time and caps the times of the files zefosator adds.
 %global source_date_epoch_from_changelog 0
-%global clamp_mtime_to_source_date_epoch 0
-%global use_source_date_epoch_as_buildtime 0
+%global clamp_mtime_to_source_date_epoch 1
+%global use_source_date_epoch_as_buildtime 1
+%global _buildhost zefosa
 %global _changelog_trimtime 0
 %global _changelog_trimage 0
 

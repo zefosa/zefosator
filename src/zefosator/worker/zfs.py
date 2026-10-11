@@ -13,6 +13,7 @@ from typing import Protocol
 from zefosator.config import Plan
 from zefosator.errors import BuildError
 from zefosator.worker.proc import run
+from zefosator.worker.repro import install_mktemp_wrapper
 
 GIT_IDENTITY = (
     "-c",
@@ -47,6 +48,7 @@ class ZfsPaths:
 class ZfsResult:
     modules_root: Path  # extracted kmod-zfs payload
     commit: str  # commit of zfs.tag before cherry-picks and patches
+    source_date_epoch: int  # commit time of zfs.tag: build and file times of the ZFS RPMs
 
 
 def _fresh(path: Path) -> Path:
@@ -103,6 +105,7 @@ def build_zfs(plan: Plan, paths: ZfsPaths, *, runner: Runner = run) -> ZfsResult
     shutil.rmtree(src, ignore_errors=True)
     shutil.copytree(cached, src, symlinks=True)
     commit = runner(["git", "rev-parse", "HEAD"], cwd=src).strip()
+    epoch = int(runner(["git", "log", "-1", "--format=%ct"], cwd=src).strip())
     for pick in plan.zfs.cherry_picks:
         runner(["git", *GIT_IDENTITY, "cherry-pick", pick], cwd=src, log=log)
     for patch in plan.zfs.patches:
@@ -128,7 +131,14 @@ def build_zfs(plan: Plan, paths: ZfsPaths, *, runner: Runner = run) -> ZfsResult
     # OpenZFS's own spec is the authority on its userspace build dependencies.
     repos = [f"--enablerepo={repo}" for repo in plan.image.enable_repos]
     runner(["dnf", "builddep", "-y", *repos, "rpm/generic/zfs.spec"], cwd=src, log=log)
-    runner(["make", "-s", f"-j{os.cpu_count() or 2}", "rpm-utils", "rpm-kmod"], cwd=src, log=log)
+    wrapper = install_mktemp_wrapper(paths.workdir / "mktemp-wrapper", paths.workdir / "rpmbuild")
+    env = {
+        **os.environ,
+        "SOURCE_DATE_EPOCH": str(epoch),
+        "PATH": f"{wrapper.parent}:{os.environ.get('PATH', '/usr/bin:/bin')}",
+    }
+    for target in ("rpm-utils", "rpm-kmod"):  # one at a time: both use the fixed rpmbuild dir
+        runner(["make", "-s", f"-j{os.cpu_count() or 2}", target], cwd=src, log=log, env=env)
 
     kmod_name = f"kmod-zfs-{plan.uname_r}"
     kmods = []
@@ -145,4 +155,4 @@ def build_zfs(plan: Plan, paths: ZfsPaths, *, runner: Runner = run) -> ZfsResult
     modules_root = _fresh(paths.workdir / "kmod-root")
     command = f"rpm2cpio {shlex.quote(str(kmods[0]))} | cpio -idm --quiet"
     runner(["sh", "-ec", command], cwd=modules_root, log=log)
-    return ZfsResult(modules_root=modules_root, commit=commit)
+    return ZfsResult(modules_root=modules_root, commit=commit, source_date_epoch=epoch)

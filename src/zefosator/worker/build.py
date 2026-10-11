@@ -1,7 +1,6 @@
 """The `build` command inside the target container: fetch, ZFS, repackage, manifest."""
 
 import shutil
-import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,9 +10,9 @@ from zefosator.worker.fetch import fetch_all
 from zefosator.worker.manifest import write_manifest
 from zefosator.worker.proc import run
 from zefosator.worker.repackage import PackageInput, RepackContext, RepackPaths, repackage
+from zefosator.worker.repro import changelog_time, kernel_epoch, write_rpm_macros
 from zefosator.worker.zfs import ZfsPaths, build_zfs
 
-DAY = 86400
 SECRET_KEY = Path("/run/secrets/zefosa-signing-key")  # podman secret, see podman.worker_run_argv
 SIGNING_CERT = Path("/signing/cert.pem")
 
@@ -50,6 +49,7 @@ def _signing(plan: Plan) -> tuple[Path, Path] | None:
 
 def run_build(plan: Plan, dirs: WorkerDirs) -> None:
     sign = _signing(plan)
+    write_rpm_macros(Path.home())  # reproducible RPMs from OpenZFS's own rpmbuild runs too
     workdir = dirs.cache / "build" / plan.target_id
     logs = workdir / "logs"
     shutil.rmtree(workdir, ignore_errors=True)
@@ -77,6 +77,7 @@ def run_build(plan: Plan, dirs: WorkerDirs) -> None:
     )
 
     _banner(4, f"Repackage kernel as {plan.kernel_version}-{plan.zefosa_release}")
+    epoch = kernel_epoch(zfs.source_date_epoch, list(rpms.values()))
     outputs = repackage(
         [PackageInput(name=p.name, role=p.role, rpm=rpms[p.name]) for p in plan.packages],
         RepackContext(
@@ -87,7 +88,8 @@ def run_build(plan: Plan, dirs: WorkerDirs) -> None:
             arch=plan.arch,
             zfs_version=plan.zfs.version,
             zfs_tag=plan.zfs.tag,
-            changelog_time=int(time.time()) // DAY * DAY + DAY // 2,
+            changelog_time=changelog_time(epoch),
+            source_date_epoch=epoch,
             sign=sign,
         ),
         RepackPaths(
@@ -100,4 +102,11 @@ def run_build(plan: Plan, dirs: WorkerDirs) -> None:
 
     _banner(5, "Write manifest")
     zfs_outputs = sorted((dirs.output / "zfs").glob("*.rpm"))
-    write_manifest(dirs.output / "manifest.json", plan, rpms, zfs.commit, [*outputs, *zfs_outputs])
+    write_manifest(
+        dirs.output / "manifest.json",
+        plan,
+        rpms,
+        zfs.commit,
+        [*outputs, *zfs_outputs],
+        source_date_epochs={"zfs": zfs.source_date_epoch, "kernel": epoch},
+    )

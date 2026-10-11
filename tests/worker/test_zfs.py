@@ -10,6 +10,7 @@ from zefosator.worker.zfs import ZfsPaths, build_zfs
 
 PLAN = load_plan(FIXTURE_ROOT / "targets" / "almalinux-9-x86_64.yaml")
 UNAME = PLAN.uname_r
+TAG_EPOCH = 1787329187
 META = """Meta:          1
 Name:          zfs
 Branch:        1.0
@@ -37,8 +38,9 @@ class FakeRunner:
         self.commands: list[list[str]] = []
         self.rpms = rpms
         self.meta_at_make = ""
+        self.envs: list[Mapping[str, str] | None] = []
 
-    def __call__(
+    def __call__(  # noqa: C901 -- one branch per faked command
         self,
         argv: Sequence[str],
         *,
@@ -49,6 +51,7 @@ class FakeRunner:
     ) -> str:
         argv = list(argv)
         self.commands.append(argv)
+        self.envs.append(env)
         if argv[:2] == ["git", "clone"]:
             if self.fail_clone:
                 msg = "clone failed"
@@ -64,6 +67,8 @@ class FakeRunner:
             return "0123abcd\n"
         elif argv[:2] == ["git", "rev-parse"]:
             return "0123abcd\n"
+        elif argv[:2] == ["git", "log"]:
+            return f"{TAG_EPOCH}\n"
         elif argv[0] == "make":
             assert cwd is not None
             self.meta_at_make = (cwd / "META").read_text()
@@ -93,7 +98,8 @@ def test_build_zfs_command_sequence_and_outputs(tmp_path: Path) -> None:
     runner = FakeRunner()
     result = build_zfs(PLAN, paths(tmp_path), runner=runner)
     programs = [c[0] if c[0] != "git" else f"git {c[1]}" for c in runner.commands]
-    assert programs[:3] == ["git clone", "git rev-parse", "sh"]
+    assert programs[:4] == ["git clone", "git rev-parse", "git log", "sh"]
+    assert runner.commands[2] == ["git", "log", "-1", "--format=%ct"]
     clone = runner.commands[0]
     assert clone[2:6] == ["--quiet", "--depth", "1", "--branch"]
     assert "zfs-2.3.9" in clone
@@ -110,9 +116,18 @@ def test_build_zfs_command_sequence_and_outputs(tmp_path: Path) -> None:
         "rpm/generic/zfs.spec",
     ]
     assert runner.commands.index(configure) < runner.commands.index(builddep)
-    make = next(c for c in runner.commands if c[0] == "make")
-    assert runner.commands.index(builddep) < runner.commands.index(make)
-    assert make[-2:] == ["rpm-utils", "rpm-kmod"]
+    makes = [i for i, c in enumerate(runner.commands) if c[0] == "make"]
+    assert runner.commands.index(builddep) < makes[0]
+    # one at a time: both use the same fixed rpmbuild directory
+    assert [runner.commands[i][-1] for i in makes] == ["rpm-utils", "rpm-kmod"]
+    wrapper_dir = tmp_path / "work" / "mktemp-wrapper"
+    for i in makes:
+        env = runner.envs[i]
+        assert env is not None
+        assert env["SOURCE_DATE_EPOCH"] == str(TAG_EPOCH)
+        assert env["PATH"].split(":")[0] == str(wrapper_dir)
+    assert f"'{tmp_path / 'work' / 'rpmbuild'}'" in (wrapper_dir / "mktemp").read_text()
+    assert result.source_date_epoch == TAG_EPOCH
     assert "Version:       2.3.9\n" in runner.meta_at_make
     assert "Release:       0\n" in runner.meta_at_make
     assert "Linux-Maximum: 5.14\n" in runner.meta_at_make
@@ -149,6 +164,9 @@ def test_cherry_picks_use_full_clone_and_patches_apply(tmp_path: Path) -> None:
     assert (tmp_path / "cache" / "zfs-src" / "zfs-2.3.9-full" / ".git").is_dir()
     picks = [c for c in runner.commands if "cherry-pick" in c]
     assert picks
+    # the epoch is the tag's commit time: cherry-picks would make it the time of the build
+    epoch_read = runner.commands.index(["git", "log", "-1", "--format=%ct"])
+    assert epoch_read < runner.commands.index(picks[0])
     assert picks[0][-1] == "abc123"
     applies = [c for c in runner.commands if c[:2] == ["git", "apply"]]
     assert applies == [["git", "apply", str(tmp_path / "src" / "patches" / "fix.patch")]]

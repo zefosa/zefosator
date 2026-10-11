@@ -125,11 +125,30 @@ uv run zefosator pack targets/fedora-44-x86_64.yaml fedora44-x86_64-zfs-kernel-p
   the pins of `boot/boot.yaml` (`zfsbootmenu`, `refind`, `ca`, `tools`, each with `version` and
   `release`). `zefosator plan` shows the rendered file lists.
 - `pack` writes `output/<target-id>/archives/<name>.tar` and `<name>.sha256` (`sha256sum -c`
-  format). Files are stored side by side without directories, owned by root with mode 0644, so
-  the same files always give the same archive.
+  format). Files are stored side by side without directories, owned by root with mode 0644 and
+  dated by each RPM's build time, so the same RPMs always give the same archive (see
+  [Reproducible builds](#reproducible-builds)).
 - Every file must be listed, with a matching checksum, in the `manifest.json` of the build that
   produced it; otherwise `pack` names each offending file and writes nothing. A failed or
   interrupted run never leaves a `.sha256` that does not describe its tar.
+
+## Reproducible builds
+
+Building the same inputs in the same build image gives byte-identical binary RPMs, and so
+identical archives: a kernel bump with an unchanged OpenZFS leaves the OpenZFS userspace RPMs and
+their archive unchanged.
+
+- rpmbuild takes build times and the newest file times from `SOURCE_DATE_EPOCH` and records the
+  build host `zefosa`. For OpenZFS it is the commit time of `zfs.tag`; for the kernel, the newest
+  of that, the vendor RPMs' build times and their file times (so vendor file times stay as they
+  are). Both are recorded in `manifest.json` (`source_date_epochs`).
+- OpenZFS's `make rpm-utils`/`rpm-kmod` build in a fixed directory instead of a random one, whose
+  path would otherwise reach the debug info and change every ELF build ID.
+- The build image counts as an input: a rebuilt image with newer compilers or libraries gives
+  different RPMs. Source RPMs and the boot packages (`build-boot`) are not reproducible yet.
+
+`tools/compare-rpms.py DIR_A DIR_B` shows what differs between the RPMs of two builds (header
+tags, file attributes, ELF sections).
 
 ## Release scheme
 

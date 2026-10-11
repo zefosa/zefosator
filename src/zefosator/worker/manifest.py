@@ -28,6 +28,7 @@ def write_manifest(  # noqa: PLR0913 -- one argument per manifest section
     zfs_commit: str,
     outputs: Sequence[Path],
     *,
+    source_date_epochs: Mapping[str, int],
     nevra: Callable[[Path], str] = rpm_nevra,
 ) -> None:
     urls = {p.name: p.url for p in plan.packages}
@@ -39,6 +40,8 @@ def write_manifest(  # noqa: PLR0913 -- one argument per manifest section
             "cherry_picks": list(plan.zfs.cherry_picks),
             "patches": list(plan.zfs.patches),
         },
+        # SOURCE_DATE_EPOCH per package set: rebuilding the same inputs gives the same RPMs
+        "source_date_epochs": dict(source_date_epochs),
         "inputs": [
             {"name": name, "url": urls[name], "file": rpm.name, "sha256": sha256(rpm)}
             for name, rpm in inputs.items()

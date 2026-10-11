@@ -60,6 +60,7 @@ ignore = [
 ]
 "src/zefosator/cli.py" = ["T201"]    # the CLI prints to stdout by design
 "src/zefosator/check.py" = ["T201"]  # the check runner reports progress on stdout
+"tools/*" = ["INP001", "N999", "T201"]  # standalone scripts with hyphenated names that print
 
 [tool.mypy]
 strict = true
