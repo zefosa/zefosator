@@ -413,21 +413,12 @@ def load_plan(target_path: Path, *, buildid: str | None = None) -> Plan:
     return plan.model_copy(update={"archives": _archive_plans(target, plan, root, target_path)})
 
 
-def _boot_package_versions(root: Path) -> dict[str, object]:
-    """boot/boot.yaml pins, plus the rEFInd version from its upstream RPM file name."""
-    config = load_boot_config(root)
-    pins = config.model_dump(mode="json")
-    # <name>-<version>-<release>.<arch>.rpm
-    pins["refind"]["version"] = config.refind.url.rsplit("/", 1)[-1].rsplit("-", 2)[1]
-    return pins
-
-
 def _archive_plans(
     target: TargetFile, plan: Plan, root: Path, target_path: Path
 ) -> tuple[ArchivePlan, ...]:
     variables: dict[str, object] = plan.model_dump(mode="json")
     if (root / "boot" / "boot.yaml").is_file():
-        variables["boot_packages"] = _boot_package_versions(root)
+        variables["boot_packages"] = load_boot_config(root).model_dump(mode="json")
     return tuple(
         ArchivePlan(name=name, files=_archive_files(name, files, variables, target_path))
         for name, files in target.archives.items()
@@ -474,6 +465,8 @@ class ZbmPin(_Model):
 
 
 class RefindPin(_Model):
+    version: ScalarStr
+    upstream_release: ScalarStr  # Fedora's release of the rEFInd-unsigned-x64 RPM
     url: str
     sha256: str = Field(pattern=_SHA256_RE)
     release: int = Field(ge=1)
@@ -493,8 +486,10 @@ class BootConfig(_Model):
 
 def load_boot_config(root: Path) -> BootConfig:
     path = root / "boot" / "boot.yaml"
+    raw = _load_yaml(path)
+    rendered = {k: _render_strings(v, raw, f"{path}: {k}") for k, v in raw.items()}
     try:
-        return BootConfig.model_validate(_load_yaml(path))
+        return BootConfig.model_validate(rendered)
     except ValidationError as exc:
         raise _validation_error(str(path), exc) from exc
 

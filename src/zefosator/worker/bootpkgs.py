@@ -169,6 +169,13 @@ def build_refind_package(
     if digest != config.refind.sha256:
         msg = f"{refind_rpm.name}: sha256 {digest} does not match the pinned {config.refind.sha256}"
         raise BuildError(msg)
+    upstream = read_header(refind_rpm)
+    if upstream.version != config.refind.version:
+        msg = (
+            f"{refind_rpm.name}: rEFInd version {upstream.version}, but refind.version is "
+            f"{config.refind.version} in boot/boot.yaml"
+        )
+        raise BuildError(msg)
     dirs = _fresh(build, "refind")
     source = dirs.workdir / "source"
     _extract(refind_rpm, source)
@@ -185,10 +192,9 @@ def build_refind_package(
         f"{ZEFOSA_ESP}/grubx64.efi": (signed.read_bytes(), 0o700),
         f"{ZEFOSA_ESP}/icons/os_zefosa.png": (zefosa_icon_png(), 0o700),
     }
-    upstream = read_header(refind_rpm)
     package = SpecPackage(
         name="zefosa-refind",
-        version=upstream.version,
+        version=config.refind.version,
         release=str(config.refind.release),
         summary="rEFInd boot manager signed for the zefosa Secure Boot chain",
         license=upstream.license,
@@ -206,7 +212,9 @@ def build_refind_package(
         changelog=f"- Signed rEFInd {upstream.version} ({refind_rpm.name}) for zefosa",
     )
     rpmbuild(render_boot_spec(package), dirs, "x86_64")
-    return build.outdir / f"zefosa-refind-{upstream.version}-{config.refind.release}.x86_64.rpm"
+    return (
+        build.outdir / f"zefosa-refind-{config.refind.version}-{config.refind.release}.x86_64.rpm"
+    )
 
 
 _TOOLS_REQUIRES = (

@@ -215,6 +215,11 @@ Fedora target it also builds the distro-independent packages into `output/boot/`
 | `zefosa-zfsbootmenu`, `zefosa-zfsbootmenu-recovery` | signed ZFSBootMenu UKIs (recovery adds rescue tools) |
 | `zefosa-boot` | `zefosa-boot` command, `zbm-kcl`, the `20-zbm.install` kernel-install plugin; replaces GRUB |
 
+String values in `boot/boot.yaml` are Jinja2 templates rendered with the file's own values: the
+rEFInd download URL is built from `refind.version` and `refind.upstream_release` (Fedora's
+release), while `refind.release` is the `zefosa-refind` package release. The build refuses an
+rEFInd RPM whose version differs from `refind.version`.
+
 Rebuild the ZFSBootMenu images (bump `release` in `boot/boot.yaml`) after zefosa Fedora kernel or
 ZFSBootMenu updates.
 

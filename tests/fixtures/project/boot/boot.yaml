@@ -17,9 +17,11 @@ zfsbootmenu:
                    smartctl, nvme, ip, ethtool, rsync, curl, ssh, scp, vi, less, strace, lsof, pv,
                    zstd, lspci, lsusb, mkfs.vfat, fsck.vfat]
 refind:
-  url: https://kojipkgs.fedoraproject.org/packages/rEFInd/0.14.2/5.fc44/noarch/rEFInd-unsigned-x64-0.14.2-5.fc44.noarch.rpm
+  version: "0.14.2"
+  upstream_release: "5.fc44"   # Fedora's release of the rEFInd-unsigned-x64 RPM
+  release: 1                   # zefosa-refind package release
+  url: "https://kojipkgs.fedoraproject.org/packages/rEFInd/{{ refind.version }}/{{ refind.upstream_release }}/noarch/rEFInd-unsigned-x64-{{ refind.version }}-{{ refind.upstream_release }}.noarch.rpm"
   sha256: b00339df78acc802151275a0afddfa3d368ba5aaaa357cea44681b781033fc8b
-  release: 1
 ca:
   version: "1"
   release: 1

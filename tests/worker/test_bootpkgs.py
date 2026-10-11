@@ -1,8 +1,10 @@
+import hashlib
 import shutil
 import struct
 import subprocess
 import zlib
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -11,6 +13,7 @@ from tests.worker.upstream import needs_rpmbuild
 from zefosator.config import load_boot_config
 from zefosator.errors import BuildError
 from zefosator.keys import KeyPair
+from zefosator.worker import bootpkgs
 from zefosator.worker.bootpkgs import (
     BootBuild,
     build_ca_package,
@@ -155,3 +158,16 @@ def test_refind_rpm_checksum_is_enforced(tmp_path: Path, signing_keys: Keys) -> 
     bogus.write_bytes(b"not the pinned rpm")
     with pytest.raises(BuildError, match="sha256"):
         build_refind_package(CONFIG, bogus, (leaf.key, leaf.cert_pem), build_dirs(tmp_path))
+
+
+def test_refind_package_refuses_an_rpm_of_another_version(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rpm = tmp_path / "rEFInd-unsigned-x64.rpm"
+    rpm.write_bytes(b"stand-in")
+    pin = CONFIG.refind.model_copy(update={"sha256": hashlib.sha256(b"stand-in").hexdigest()})
+    config = CONFIG.model_copy(update={"refind": pin})
+    monkeypatch.setattr(bootpkgs, "read_header", lambda _: SimpleNamespace(version="0.14.1"))
+    with pytest.raises(BuildError, match=r"version 0\.14\.1, but refind\.version is 0\.14\.2"):
+        build_refind_package(config, rpm, (tmp_path / "k", tmp_path / "c"), build_dirs(tmp_path))
+    assert not (tmp_path / "out").exists()

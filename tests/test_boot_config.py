@@ -44,7 +44,28 @@ def test_boot_config_file() -> None:
     assert (
         config.refind.sha256 == "b00339df78acc802151275a0afddfa3d368ba5aaaa357cea44681b781033fc8b"
     )
-    assert config.refind.url.endswith("rEFInd-unsigned-x64-0.14.2-5.fc44.noarch.rpm")
+    assert (config.refind.version, config.refind.upstream_release) == ("0.14.2", "5.fc44")
+    assert config.refind.release == 1
+    assert config.refind.url == (
+        "https://kojipkgs.fedoraproject.org/packages/rEFInd/0.14.2/5.fc44/noarch/"
+        "rEFInd-unsigned-x64-0.14.2-5.fc44.noarch.rpm"
+    )
+
+
+def test_refind_url_is_rendered_from_its_pins(tmp_path: Path) -> None:
+    text = (FIXTURE_ROOT / "boot" / "boot.yaml").read_text()
+    start, end = text.index("refind:"), text.index("ca:")
+    refind = """\
+refind:
+  version: "9.9.9"
+  upstream_release: "3.fc50"
+  release: 2
+  url: "https://example.org/{{ refind.version }}/{{ refind.upstream_release }}/r.rpm"
+  sha256: b00339df78acc802151275a0afddfa3d368ba5aaaa357cea44681b781033fc8b
+"""
+    (tmp_path / "boot").mkdir()
+    (tmp_path / "boot" / "boot.yaml").write_text(text[:start] + refind + text[end:])
+    assert load_boot_config(tmp_path).refind.url == "https://example.org/9.9.9/3.fc50/r.rpm"
 
 
 def test_invalid_pins_rejected(tmp_path: Path) -> None:
