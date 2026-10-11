@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from tests.worker.upstream import needs_rpmbuild
 from zefosator.config import load_boot_config
 from zefosator.errors import BuildError
@@ -21,7 +22,7 @@ from zefosator.worker.bootpkgs import (
 from zefosator.worker.rpmheader import DepKind, ScriptKind, read_header
 
 ROOT = Path(__file__).resolve().parents[2]
-CONFIG = load_boot_config(ROOT)
+CONFIG = load_boot_config(FIXTURE_ROOT)
 Keys = tuple[KeyPair, KeyPair]
 KEYS = "usr/share/zefosa/keys"
 

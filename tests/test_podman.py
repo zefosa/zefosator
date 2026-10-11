@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from zefosator.config import SigningInfo, load_boot_config, load_plan
 from zefosator.errors import BuildError
 from zefosator.podman import (
@@ -17,9 +18,8 @@ from zefosator.podman import (
 from zefosator.signing import SigningInput
 from zefosator.worker.boot import BootJob
 
-ROOT = Path(__file__).resolve().parent.parent
-FEDORA = load_plan(ROOT / "targets" / "fedora-44-x86_64.yaml")
-ALMA = load_plan(ROOT / "targets" / "almalinux-9-x86_64.yaml")
+FEDORA = load_plan(FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml")
+ALMA = load_plan(FIXTURE_ROOT / "targets" / "almalinux-9-x86_64.yaml")
 
 
 def test_fedora_containerfile() -> None:
@@ -177,8 +177,8 @@ def test_unsigned_build_has_no_secret(tmp_path: Path) -> None:
 
 
 def boot_job(target: str) -> BootJob:
-    plan = load_plan(ROOT / "targets" / f"{target}.yaml")
-    return BootJob(plan=plan, config=load_boot_config(ROOT))
+    plan = load_plan(FIXTURE_ROOT / "targets" / f"{target}.yaml")
+    return BootJob(plan=plan, config=load_boot_config(FIXTURE_ROOT))
 
 
 def test_build_boot_common_mounts_signing_material(tmp_path: Path) -> None:

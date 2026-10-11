@@ -2,14 +2,13 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from zefosator.config import load_boot_config, load_plan
 from zefosator.errors import ConfigError
 
-ROOT = Path(__file__).resolve().parent.parent
-
 
 def test_fedora_boot_plan() -> None:
-    boot = load_plan(ROOT / "targets" / "fedora-44-x86_64.yaml").boot
+    boot = load_plan(FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml").boot
     assert boot is not None
     assert boot.common
     assert boot.esp_dir == "fedora"
@@ -23,7 +22,7 @@ def test_fedora_boot_plan() -> None:
 
 
 def test_almalinux_boot_plans() -> None:
-    el9 = load_plan(ROOT / "targets" / "almalinux-9-x86_64.yaml").boot
+    el9 = load_plan(FIXTURE_ROOT / "targets" / "almalinux-9-x86_64.yaml").boot
     assert el9 is not None
     assert not el9.common
     assert el9.esp_dir == "almalinux"
@@ -32,13 +31,13 @@ def test_almalinux_boot_plans() -> None:
         "shim-x64-16.1-7.el9.alma.1.x86_64.rpm"
     )
     assert el9.zefosa_shim_release == "7.el9.alma.1.zefosa"
-    el10 = load_plan(ROOT / "targets" / "almalinux-10-x86_64.yaml").boot
+    el10 = load_plan(FIXTURE_ROOT / "targets" / "almalinux-10-x86_64.yaml").boot
     assert el10 is not None
     assert el10.shim_url.startswith("https://repo.almalinux.org/almalinux/10.2/BaseOS/")
 
 
 def test_boot_config_file() -> None:
-    config = load_boot_config(ROOT)
+    config = load_boot_config(FIXTURE_ROOT)
     assert config.zfsbootmenu.version == "3.1.0"
     assert config.zfsbootmenu.commit == "7174e420590a270ece3c6426bdb1d5cdd9ef27b0"
     assert "efibootmgr" in config.zfsbootmenu.recovery_tools
@@ -50,7 +49,7 @@ def test_boot_config_file() -> None:
 
 def test_invalid_pins_rejected(tmp_path: Path) -> None:
     text = (
-        (ROOT / "boot" / "boot.yaml")
+        (FIXTURE_ROOT / "boot" / "boot.yaml")
         .read_text()
         .replace("7174e420590a270ece3c6426bdb1d5cdd9ef27b0", "v3.1.0")
     )
@@ -64,9 +63,9 @@ def test_target_without_boot_section_has_no_boot_plan(tmp_path: Path) -> None:
     for d in ("vendors", "targets"):
         (tmp_path / d).mkdir()
     (tmp_path / "vendors" / "fedora.yaml").write_text(
-        (ROOT / "vendors" / "fedora.yaml").read_text()
+        (FIXTURE_ROOT / "vendors" / "fedora.yaml").read_text()
     )
-    text = (ROOT / "targets" / "fedora-44-x86_64.yaml").read_text()
+    text = (FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml").read_text()
     text = text[: text.index("boot:")]
     (tmp_path / "targets" / "t.yaml").write_text(text)
     assert load_plan(tmp_path / "targets" / "t.yaml").boot is None
@@ -75,10 +74,12 @@ def test_target_without_boot_section_has_no_boot_plan(tmp_path: Path) -> None:
 def test_invalid_drop_requires_regex(tmp_path: Path) -> None:
     for d in ("vendors", "targets"):
         (tmp_path / d).mkdir()
-    vendor = (ROOT / "vendors" / "fedora.yaml").read_text().replace("'^grub2-'", "'grub2-('")
+    vendor = (
+        (FIXTURE_ROOT / "vendors" / "fedora.yaml").read_text().replace("'^grub2-'", "'grub2-('")
+    )
     (tmp_path / "vendors" / "fedora.yaml").write_text(vendor)
     (tmp_path / "targets" / "t.yaml").write_text(
-        (ROOT / "targets" / "fedora-44-x86_64.yaml").read_text()
+        (FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml").read_text()
     )
     with pytest.raises(ConfigError, match="drop_requires"):
         load_plan(tmp_path / "targets" / "t.yaml")

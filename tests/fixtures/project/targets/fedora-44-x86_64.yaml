@@ -1,0 +1,14 @@
+# Frozen test fixture (tests/project.py): never bump versions here.
+# https://koji.fedoraproject.org/koji/packageinfo?packageID=8
+vendor: fedora
+os_version: "44"
+arch: x86_64
+kernel:
+  version: 7.2.9
+  release: "200"
+zfs:
+  tag: zfs-2.4.4
+  version: 2.4.4
+boot:
+  shim: {version: "16.1", release: "7"}
+  cloud_image: https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2

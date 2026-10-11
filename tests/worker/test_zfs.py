@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from zefosator.config import load_plan
 from zefosator.errors import BuildError
 from zefosator.worker.zfs import ZfsPaths, build_zfs
 
-ROOT = Path(__file__).resolve().parents[2]
-PLAN = load_plan(ROOT / "targets" / "almalinux-9-x86_64.yaml")
+PLAN = load_plan(FIXTURE_ROOT / "targets" / "almalinux-9-x86_64.yaml")
 UNAME = PLAN.uname_r
 META = """Meta:          1
 Name:          zfs

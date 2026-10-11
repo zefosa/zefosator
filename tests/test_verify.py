@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from zefosator.config import load_plan
 from zefosator.errors import BuildError
 from zefosator.verify import render_script, verify, verify_argv
 
-ROOT = Path(__file__).resolve().parent.parent
-PLAN = load_plan(ROOT / "targets" / "almalinux-9-x86_64.yaml")
+PLAN = load_plan(FIXTURE_ROOT / "targets" / "almalinux-9-x86_64.yaml")
 
 
 def test_script_sets_up_priority_repo_from_output_copy() -> None:

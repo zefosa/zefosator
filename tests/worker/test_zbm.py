@@ -4,13 +4,13 @@ from pathlib import Path
 import pytest
 import yaml
 
+from tests.project import FIXTURE_ROOT
 from zefosator.config import load_boot_config, load_plan
 from zefosator.errors import BuildError
 from zefosator.worker.zbm import ZbmPaths, build_zbm
 
-ROOT = Path(__file__).resolve().parents[2]
-PLAN = load_plan(ROOT / "targets" / "fedora-44-x86_64.yaml")
-CONFIG = load_boot_config(ROOT)
+PLAN = load_plan(FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml")
+CONFIG = load_boot_config(FIXTURE_ROOT)
 UNAME = PLAN.uname_r
 
 

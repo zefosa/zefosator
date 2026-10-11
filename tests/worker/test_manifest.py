@@ -2,11 +2,11 @@ import hashlib
 import json
 from pathlib import Path
 
+from tests.project import FIXTURE_ROOT
 from zefosator.config import load_plan
 from zefosator.worker.manifest import write_manifest
 
-ROOT = Path(__file__).resolve().parents[2]
-PLAN = load_plan(ROOT / "targets" / "fedora-44-x86_64.yaml")
+PLAN = load_plan(FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml")
 
 
 def test_manifest_lists_inputs_outputs_and_zfs(tmp_path: Path) -> None:

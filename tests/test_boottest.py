@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from zefosator.boottest import (
     BUILDER_PACKAGES,
     REQUIRED_TOOLS,
@@ -18,8 +19,7 @@ from zefosator.boottest import (
 from zefosator.config import load_plan
 from zefosator.errors import ConfigError
 
-ROOT = Path(__file__).resolve().parent.parent
-PLAN = load_plan(ROOT / "targets" / "almalinux-9-x86_64.yaml")
+PLAN = load_plan(FIXTURE_ROOT / "targets" / "almalinux-9-x86_64.yaml")
 
 
 def test_missing_host_tools_are_listed_with_packages(tmp_path: Path) -> None:

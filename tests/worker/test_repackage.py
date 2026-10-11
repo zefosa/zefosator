@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from tests.worker.upstream import UNAME_R, build_kmod_payload, build_upstream, needs_rpmbuild
 from zefosator.config import load_plan
 from zefosator.errors import BuildError
@@ -160,7 +161,7 @@ def test_stage_modules_requires_modules(tmp_path: Path) -> None:
     "target", ["fedora-44-x86_64", "almalinux-9-x86_64", "almalinux-10-x86_64"]
 )
 def test_repackage_real_upstream_packages(tmp_path: Path, target: str) -> None:
-    plan = load_plan(ROOT / "targets" / f"{target}.yaml")
+    plan = load_plan(FIXTURE_ROOT / "targets" / f"{target}.yaml")
     missing = [p.file for p in plan.packages if not (DOWNLOADS / p.file).is_file()]
     if missing:
         pytest.skip(f"not downloaded: {missing}")

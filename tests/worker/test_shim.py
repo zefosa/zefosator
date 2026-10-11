@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from tests.worker.upstream import needs_rpmbuild
 from zefosator.config import load_plan
 from zefosator.errors import BuildError
@@ -92,7 +93,7 @@ def _sha(path: Path) -> str:
     "target", ["fedora-44-x86_64", "almalinux-9-x86_64", "almalinux-10-x86_64"]
 )
 def test_build_shim_from_real_vendor_rpm(tmp_path: Path, target: str) -> None:
-    plan = load_plan(ROOT / "targets" / f"{target}.yaml")
+    plan = load_plan(FIXTURE_ROOT / "targets" / f"{target}.yaml")
     assert plan.boot is not None
     vendor = DOWNLOADS / plan.boot.shim_file
     if not vendor.is_file():

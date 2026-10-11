@@ -2,10 +2,9 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from zefosator.config import Plan, load_plan
 from zefosator.errors import ConfigError
-
-ROOT = Path(__file__).resolve().parent.parent
 
 MINI_VENDOR = """\
 defaults:
@@ -62,7 +61,7 @@ def make_root(
 
 
 def real_plan(name: str, buildid: str | None = None) -> Plan:
-    return load_plan(ROOT / "targets" / f"{name}.yaml", buildid=buildid)
+    return load_plan(FIXTURE_ROOT / "targets" / f"{name}.yaml", buildid=buildid)
 
 
 def test_fedora_plan_values() -> None:
@@ -233,7 +232,9 @@ def archive_root(tmp_path: Path, archives: str, *, boot_yaml: bool = False) -> P
     )
     if boot_yaml:
         (tmp_path / "boot").mkdir()
-        (tmp_path / "boot" / "boot.yaml").write_text((ROOT / "boot" / "boot.yaml").read_text())
+        (tmp_path / "boot" / "boot.yaml").write_text(
+            (FIXTURE_ROOT / "boot" / "boot.yaml").read_text()
+        )
     return target
 
 

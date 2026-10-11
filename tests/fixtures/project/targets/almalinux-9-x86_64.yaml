@@ -1,0 +1,14 @@
+# Frozen test fixture (tests/project.py): never bump versions here.
+# https://vault.almalinux.org/9/BaseOS/Source/Packages/
+vendor: almalinux
+os_version: "9.8"
+arch: x86_64
+kernel:
+  version: 5.14.0
+  release: 687.52.1
+zfs:
+  tag: zfs-2.3.9
+  version: 2.3.9
+boot:
+  shim: {version: "16.1", release: "7.el9.alma.1"}
+  cloud_image: https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2

@@ -4,18 +4,21 @@ from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT
 from zefosator.config import BootPlan, SigningInfo, load_boot_config, load_plan
 from zefosator.errors import BuildError
 from zefosator.worker import boot
 from zefosator.worker.zbm import ZbmResult
 
 ROOT = Path(__file__).resolve().parents[2]
-CONFIG = load_boot_config(ROOT)
+CONFIG = load_boot_config(FIXTURE_ROOT)
 SIGNED = SigningInfo(cert_sha256="ab" * 32, cert_subject="CN=x")
 
 
 def job_for(target: str) -> boot.BootJob:
-    plan = load_plan(ROOT / "targets" / f"{target}.yaml").model_copy(update={"signing": SIGNED})
+    plan = load_plan(FIXTURE_ROOT / "targets" / f"{target}.yaml").model_copy(
+        update={"signing": SIGNED}
+    )
     assert plan.boot is not None
     return boot.BootJob(plan=plan, config=CONFIG)
 
