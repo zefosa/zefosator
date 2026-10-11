@@ -15,7 +15,6 @@ boot:
 archives:
   almalinux9-x86_64-zfs-userspace-packages:
     - "{{ target_id }}/zfs/kmod-zfs-devel-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
-    - "{{ target_id }}/zfs/kmod-zfs-devel-{{ uname_r }}-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
     - "{{ target_id }}/zfs/libnvpair3-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
     - "{{ target_id }}/zfs/libuutil3-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
     - "{{ target_id }}/zfs/libzfs6-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
@@ -34,3 +33,4 @@ archives:
     - "{{ target_id }}/kernel/kernel-modules-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
     - "{{ target_id }}/kernel/kernel-modules-core-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
     - "{{ target_id }}/kernel/kernel-modules-extra-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/kmod-zfs-devel-{{ uname_r }}-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
