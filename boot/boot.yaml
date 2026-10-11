@@ -3,7 +3,7 @@
 zfsbootmenu:
   version: "3.1.0"
   repo: https://github.com/zbm-dev/zfsbootmenu.git
-  commit: 7174e420590a270ece3c6426bdb1d5cdd9ef27b0   # tag v3.1.0
+  tag: v3.1.0                # a tag or a commit; the build records the commit it resolves to
   release: 1
   build_packages: [dracut, kmod, kexec-tools, fzf, mbuffer, perl, perl-YAML-PP, perl-Sort-Versions,
                    perl-boolean, make, git-core, systemd-ukify, systemd-boot-unsigned, sbsigntools,

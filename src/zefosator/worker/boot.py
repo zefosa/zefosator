@@ -133,5 +133,8 @@ def run_boot(job: BootJob, dirs: BootDirs) -> None:
         build_refind_package(config, refind, sign, build),
         build_tools_package(config, dirs.src, zbm.checkout, build),
     ]
-    inputs = {refind_file: config.refind.url, "zfsbootmenu": config.zfsbootmenu.commit}
+    inputs = {
+        refind_file: config.refind.url,
+        "zfsbootmenu": f"{config.zfsbootmenu.tag} ({zbm.commit})",
+    }
     _manifest(dirs.common_output / "manifest.json", job, inputs, outputs)

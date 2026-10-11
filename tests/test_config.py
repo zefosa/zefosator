@@ -240,7 +240,7 @@ BOOT_YAML = """\
 zfsbootmenu:
   version: "3.2.0"
   repo: https://example.org/zfsbootmenu.git
-  commit: 7174e420590a270ece3c6426bdb1d5cdd9ef27b0
+  tag: v3.2.0
   release: 4
   build_packages: [dracut]
   recovery_packages: []

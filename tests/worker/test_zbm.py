@@ -12,6 +12,7 @@ from zefosator.worker.zbm import ZbmPaths, build_zbm
 PLAN = load_plan(FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml")
 CONFIG = load_boot_config(FIXTURE_ROOT)
 UNAME = PLAN.uname_r
+COMMIT = "7174e420590a270ece3c6426bdb1d5cdd9ef27b0"
 
 
 class FakeRunner:
@@ -40,7 +41,7 @@ class FakeRunner:
             (dest / "bin").mkdir()
             (dest / "bin/zbm-kcl").write_text("kcl")
         elif argv[:2] == ["git", "-C"] and "rev-parse" in argv:
-            return CONFIG.zfsbootmenu.commit + "\n"
+            return COMMIT + "\n"
         elif argv[0] == "generate-zbm":
             config = yaml.safe_load(Path(argv[-1]).read_text())
             self.configs.append(config)
@@ -119,6 +120,13 @@ def test_command_sequence(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
     assert gen_env is not None
     assert gen_env["DRACUT_NO_XATTR"] == "1"
     assert result.checkout.joinpath("bin/zbm-kcl").is_file()  # type: ignore[attr-defined] # ZbmResult
+    assert result.commit == COMMIT  # type: ignore[attr-defined] # ZbmResult
+    git = [c for c in runner.commands if c[0] == "git"]
+    assert [c[3:] for c in git[1:]] == [
+        ["checkout", "--quiet", "v3.1.0"],
+        ["rev-parse", "HEAD"],
+        ["rev-parse", "v3.1.0^{commit}"],
+    ]
 
 
 def test_dracut_config_forces_zfs_modules_and_recovery_tools(
@@ -150,11 +158,11 @@ def test_wrong_checkout_commit_fails(tmp_path: Path, monkeypatch: pytest.MonkeyP
     original = runner.__call__
 
     def wrong(argv: Sequence[str], **kwargs: object) -> str:
-        if list(argv[:2]) == ["git", "-C"] and "rev-parse" in argv:
+        if list(argv[:2]) == ["git", "-C"] and argv[-1] == "HEAD":
             return "0" * 40 + "\n"
         return original(argv, **kwargs)  # type: ignore[arg-type] # passthrough of keyword args
 
     monkeypatch.setattr("zefosator.worker.zbm.rpmbuild", fake_rpmbuild)
     monkeypatch.setattr("zefosator.worker.zbm.which", lambda name: f"/usr/bin/{name}")
-    with pytest.raises(BuildError, match="commit"):
+    with pytest.raises(BuildError, match=rf"at commit 0{{40}}, but v3\.1\.0 is {COMMIT}"):
         build_zbm(PLAN, CONFIG, paths(tmp_path), (tmp_path / "k", tmp_path / "c"), runner=wrong)

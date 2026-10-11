@@ -78,6 +78,7 @@ def fakes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> list[str]:
             rpm(out, "zefosa-zfsbootmenu.rpm"),
             rpm(out, "zefosa-zfsbootmenu-recovery.rpm"),
             tmp_path,
+            "7174e420590a270ece3c6426bdb1d5cdd9ef27b0",
         )
 
     monkeypatch.setattr(boot, "build_zbm", fake_zbm)
@@ -112,6 +113,7 @@ def test_fedora_builds_shim_and_common_packages(tmp_path: Path, fakes: list[str]
         "zefosa-zfsbootmenu.rpm",
     ]
     assert manifest["signing"]["cert_sha256"] == "ab" * 32
+    assert manifest["inputs"]["zfsbootmenu"] == "v3.1.0 (7174e420590a270ece3c6426bdb1d5cdd9ef27b0)"
     shim_manifest = json.loads((d.output / "boot" / "manifest.json").read_text())
     assert shim_manifest["outputs"][0]["path"] == "shim-x64.rpm"
 

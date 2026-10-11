@@ -450,14 +450,14 @@ def _archive_files(
     return tuple(seen)
 
 
-_COMMIT_RE = r"^[0-9a-f]{40}$"
+_GIT_REF_RE = r"^[A-Za-z0-9._][A-Za-z0-9._/-]*$"  # never an option, never whitespace
 _SHA256_RE = r"^[0-9a-f]{64}$"
 
 
 class ZbmPin(_Model):
     version: ScalarStr
     repo: str
-    commit: str = Field(pattern=_COMMIT_RE)
+    tag: str = Field(pattern=_GIT_REF_RE)  # a tag or a commit; the resolved commit is recorded
     release: int = Field(ge=1)
     build_packages: tuple[str, ...]
     recovery_packages: tuple[str, ...]

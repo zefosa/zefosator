@@ -39,7 +39,7 @@ def test_almalinux_boot_plans() -> None:
 def test_boot_config_file() -> None:
     config = load_boot_config(FIXTURE_ROOT)
     assert config.zfsbootmenu.version == "3.1.0"
-    assert config.zfsbootmenu.commit == "7174e420590a270ece3c6426bdb1d5cdd9ef27b0"
+    assert config.zfsbootmenu.tag == "v3.1.0"
     assert "efibootmgr" in config.zfsbootmenu.recovery_tools
     assert (
         config.refind.sha256 == "b00339df78acc802151275a0afddfa3d368ba5aaaa357cea44681b781033fc8b"
@@ -68,16 +68,23 @@ refind:
     assert load_boot_config(tmp_path).refind.url == "https://example.org/9.9.9/3.fc50/r.rpm"
 
 
-def test_invalid_pins_rejected(tmp_path: Path) -> None:
+@pytest.mark.parametrize("tag", ["-x", "v3 1", ""])
+def test_invalid_zfsbootmenu_tags_rejected(tmp_path: Path, tag: str) -> None:
+    text = (FIXTURE_ROOT / "boot" / "boot.yaml").read_text().replace("tag: v3.1.0", f'tag: "{tag}"')
+    (tmp_path / "boot").mkdir()
+    (tmp_path / "boot" / "boot.yaml").write_text(text)
+    with pytest.raises(ConfigError, match=r"zfsbootmenu\.tag"):
+        load_boot_config(tmp_path)
+
+
+def test_zfsbootmenu_tag_may_be_a_commit(tmp_path: Path) -> None:
+    commit = "7174e420590a270ece3c6426bdb1d5cdd9ef27b0"
     text = (
-        (FIXTURE_ROOT / "boot" / "boot.yaml")
-        .read_text()
-        .replace("7174e420590a270ece3c6426bdb1d5cdd9ef27b0", "v3.1.0")
+        (FIXTURE_ROOT / "boot" / "boot.yaml").read_text().replace("tag: v3.1.0", f"tag: {commit}")
     )
     (tmp_path / "boot").mkdir()
     (tmp_path / "boot" / "boot.yaml").write_text(text)
-    with pytest.raises(ConfigError, match=r"zfsbootmenu\.commit"):
-        load_boot_config(tmp_path)
+    assert load_boot_config(tmp_path).zfsbootmenu.tag == commit
 
 
 def test_target_without_boot_section_has_no_boot_plan(tmp_path: Path) -> None:

@@ -46,7 +46,8 @@ class ZbmPaths:
 class ZbmResult:
     regular: Path
     recovery: Path
-    checkout: Path  # ZBM source at the pinned commit (zbm-kcl, man pages, license)
+    checkout: Path  # ZBM source at the pinned tag (zbm-kcl, man pages, license)
+    commit: str  # what the tag resolved to
 
 
 @dataclass(frozen=True)
@@ -66,25 +67,28 @@ def _select(directory: Path, pattern: re.Pattern[str]) -> list[Path]:
     )
 
 
-def _checkout(config: BootConfig, cache: Path, runner: Runner, log: Path) -> Path:
+def _checkout(config: BootConfig, cache: Path, runner: Runner, log: Path) -> tuple[Path, str]:
+    """A cached checkout of zfsbootmenu.tag and the commit it resolves to."""
     pin = config.zfsbootmenu
-    dest = cache / "zbm-src" / pin.commit
+    name = pin.tag.replace("/", "_")
+    dest = cache / "zbm-src" / name
     if not dest.is_dir():
         dest.parent.mkdir(parents=True, exist_ok=True)
-        tmp = Path(tempfile.mkdtemp(dir=dest.parent, prefix=f"{pin.commit}.tmp-"))
+        tmp = Path(tempfile.mkdtemp(dir=dest.parent, prefix=f"{name}.tmp-"))
         try:
             runner(["git", "clone", "--quiet", pin.repo, str(tmp)], log=log)
-            runner(["git", "-C", str(tmp), "checkout", "--quiet", pin.commit], log=log)
+            runner(["git", "-C", str(tmp), "checkout", "--quiet", pin.tag], log=log)
             tmp.rename(dest)
         except (BuildError, OSError):
             shutil.rmtree(tmp, ignore_errors=True)
             if not dest.is_dir():
                 raise
     head = runner(["git", "-C", str(dest), "rev-parse", "HEAD"]).strip()
-    if head != pin.commit:
-        msg = f"ZFSBootMenu checkout {dest} is at commit {head}, expected {pin.commit}"
+    commit = runner(["git", "-C", str(dest), "rev-parse", f"{pin.tag}^{{commit}}"]).strip()
+    if head != commit:
+        msg = f"ZFSBootMenu checkout {dest} is at commit {head}, but {pin.tag} is {commit}"
         raise BuildError(msg)
-    return dest
+    return dest, commit
 
 
 def _conf_dir(checkout: Path, dest: Path, extra: dict[str, str]) -> Path:
@@ -159,7 +163,9 @@ def _uki(job: _Job, flavor: str, image_dir: Path) -> Path:
     return signed
 
 
-def _package(plan: Plan, config: BootConfig, flavor: str, efi: Path, build: BootBuild) -> Path:
+def _package(  # noqa: PLR0913 -- the package's facts, one argument each
+    plan: Plan, config: BootConfig, flavor: str, efi: Path, build: BootBuild, *, commit: str
+) -> Path:
     pin = config.zfsbootmenu
     workdir = build.workdir / f"pkg-{flavor}"
     shutil.rmtree(workdir, ignore_errors=True)
@@ -182,8 +188,8 @@ def _package(plan: Plan, config: BootConfig, flavor: str, efi: Path, build: Boot
         license="MIT",
         url="https://zfsbootmenu.org",
         description=(
-            f"ZFSBootMenu {pin.version} (commit {pin.commit}) as a signed UKI built with the "
-            f"zefosa kernel {kernel}: it loads only signed modules and kexecs only verified "
+            f"ZFSBootMenu {pin.version} ({pin.tag}, commit {commit}) as a signed UKI built with "
+            f"the zefosa kernel {kernel}: it loads only signed modules and kexecs only verified "
             "kernels under Secure Boot. Options come from rEFInd (no embedded command line)."
         ),
         arch="x86_64",
@@ -236,7 +242,7 @@ def build_zbm(
 ) -> ZbmResult:
     log = paths.logs / "zbm.log"
     _install_inputs(plan, config, paths, runner, log)
-    checkout = _checkout(config, paths.cache, runner, log)
+    checkout, commit = _checkout(config, paths.cache, runner, log)
     source = paths.workdir / "zbm-src"
     shutil.rmtree(source, ignore_errors=True)
     shutil.copytree(checkout, source, symlinks=True, ignore=shutil.ignore_patterns(".git"))
@@ -249,5 +255,5 @@ def build_zbm(
         conf = _conf_dir(checkout, paths.workdir / f"{flavor}.conf.d", extra)
         image_dir = _generate(job, flavor, conf)
         efi = _uki(job, flavor, image_dir)
-        rpms.append(_package(plan, config, flavor, efi, build))
-    return ZbmResult(regular=rpms[0], recovery=rpms[1], checkout=checkout)
+        rpms.append(_package(plan, config, flavor, efi, build, commit=commit))
+    return ZbmResult(regular=rpms[0], recovery=rpms[1], checkout=checkout, commit=commit)
