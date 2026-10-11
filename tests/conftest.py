@@ -1,8 +1,21 @@
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
+from tests.project import FIXTURE_ROOT, fixture_snapshot
 from zefosator.keys import KeyPair, create_ca, create_leaf
+
+
+@pytest.fixture(scope="session", autouse=True)
+def fixture_project_stays_untouched() -> Iterator[None]:
+    """Fail the run if any test wrote into the frozen fixture project."""
+    before = fixture_snapshot()
+    yield
+    after = fixture_snapshot()
+    if after != before:
+        changed = sorted({*before, *after} - {k for k in before if before.get(k) == after.get(k)})
+        pytest.fail(f"tests changed {FIXTURE_ROOT}: {changed}; use tests.project.project_copy()")
 
 
 @pytest.fixture(scope="session")

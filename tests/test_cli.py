@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.project import FIXTURE_ROOT
+from tests.project import FIXTURE_ROOT, project_copy
 from zefosator import podman, verify
 from zefosator.cli import main
 from zefosator.config import Plan
@@ -108,7 +108,8 @@ def test_build_boot_checks_leaf_chains_to_ca(
 ) -> None:
     _, leaf = signing_keys
     other = create_ca(tmp_path / "other", passphrase=None, cn="Other CA", days=5)
-    target = str(FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml")
+    # build-boot writes cache/signing/ca.pem before it checks the chain
+    target = str(project_copy(tmp_path) / "targets" / "fedora-44-x86_64.yaml")
     args = [
         "build-boot",
         target,
@@ -120,7 +121,7 @@ def test_build_boot_checks_leaf_chains_to_ca(
 
 
 def test_build_boot_runs_podman(
-    monkeypatch: pytest.MonkeyPatch, signing_keys: tuple[KeyPair, KeyPair]
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, signing_keys: tuple[KeyPair, KeyPair]
 ) -> None:
     ca, leaf = signing_keys
     seen: list[tuple[str, bool, bool]] = []
@@ -132,7 +133,8 @@ def test_build_boot_runs_podman(
         seen.append((job.plan.target_id, signing is not None, job.plan.signing is not None))
 
     monkeypatch.setattr(podman, "build_boot", fake)
-    fedora = str(FIXTURE_ROOT / "targets" / "fedora-44-x86_64.yaml")
+    project = project_copy(tmp_path)  # build-boot writes cache/signing/ca.der
+    fedora = str(project / "targets" / "fedora-44-x86_64.yaml")
     signed = [
         "--signing-key",
         str(leaf.key),
@@ -142,5 +144,6 @@ def test_build_boot_runs_podman(
         str(ca.cert_pem),
     ]
     assert main(["build-boot", fedora, *signed]) == 0
-    assert main(["build-boot", str(FIXTURE_ROOT / "targets" / "almalinux-9-x86_64.yaml")]) == 0
+    assert main(["build-boot", str(project / "targets" / "almalinux-9-x86_64.yaml")]) == 0
+    assert (project / "cache" / "signing" / "ca.der").read_bytes() == ca.cert_der.read_bytes()
     assert seen == [("fedora-44-x86_64", True, True), ("almalinux-9.8-x86_64", False, False)]
