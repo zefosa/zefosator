@@ -11,3 +11,26 @@ zfs:
 boot:
   shim: {version: "16.1", release: "4.el10.alma.1"}
   cloud_image: https://repo.almalinux.org/almalinux/10/cloud/x86_64/images/AlmaLinux-10-GenericCloud-latest.x86_64.qcow2
+# tar + sha256 archives for `zefosator pack`; paths are under output/ (Jinja2: see `zefosator plan`)
+archives:
+  almalinux10-x86_64-zfs-userspace-packages:
+    - "{{ target_id }}/zfs/kmod-zfs-devel-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/kmod-zfs-devel-{{ uname_r }}-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libnvpair3-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libuutil3-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libzfs6-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libzfs6-devel-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libzpool6-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/python3-pyzfs-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.noarch.rpm"
+    - "{{ target_id }}/zfs/zfs-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/zfs-dracut-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.noarch.rpm"
+  almalinux10-x86_64-zfs-kernel-packages:
+    - "{{ target_id }}/kernel/kernel-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-abi-stablelists-{{ kernel_version }}-{{ zefosa_release }}.noarch.rpm"
+    - "{{ target_id }}/kernel/kernel-core-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-devel-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-devel-matched-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-headers-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-modules-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-modules-core-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-modules-extra-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"

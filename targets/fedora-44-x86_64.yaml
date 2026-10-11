@@ -11,3 +11,23 @@ zfs:
 boot:
   shim: {version: "16.1", release: "7"}
   cloud_image: https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2
+# tar + sha256 archives for `zefosator pack`; paths are under output/ (Jinja2: see `zefosator plan`)
+archives:
+  fedora44-x86_64-zfs-userspace-packages:
+    - "{{ target_id }}/zfs/libnvpair3-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libuutil3-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libzfs7-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libzfs7-devel-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/libzpool7-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/python3-pyzfs-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.noarch.rpm"
+    - "{{ target_id }}/zfs/zfs-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/zfs-dracut-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.noarch.rpm"
+  fedora44-x86_64-zfs-kernel-packages:
+    - "{{ target_id }}/kernel/kernel-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-core-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-devel-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-devel-matched-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-modules-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-modules-core-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-modules-extra-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-modules-internal-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"

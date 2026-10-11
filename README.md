@@ -31,6 +31,7 @@ Everything else runs in a per-target container built from the vendor's base imag
 uv run zefosator plan   targets/fedora-44-x86_64.yaml   # show the resolved plan (JSON)
 uv run zefosator build  targets/fedora-44-x86_64.yaml   # build into output/fedora-44-x86_64/
 uv run zefosator verify targets/fedora-44-x86_64.yaml   # install and check in a clean container
+uv run zefosator pack   targets/fedora-44-x86_64.yaml   # tar + sha256 archives for publishing
 ```
 
 `build` writes:
@@ -41,7 +42,7 @@ uv run zefosator verify targets/fedora-44-x86_64.yaml   # install and check in a
 - `output/<target-id>/manifest.json` — input URLs and checksums, the OpenZFS commit, and every
   output's NEVRA and checksum.
 
-Choosing which of these to publish is up to the publishing step.
+Which of these get published is chosen by the target's `archives` (see [Archives](#archives)).
 
 `verify` copies the output into a container of the vendor's plain base image, adds it as a local
 repository with `priority=10`, and checks that dnf prefers the zefosa kernel over a newer upstream, that
@@ -100,6 +101,35 @@ overrides:
   differences and `overrides` for structural ones. When a distro version changes fundamentally,
   copy the vendor file and point the target at the new name.
 - Each role (`core`, `modules`, `devel`) must appear exactly once. Every listed package is rebuilt.
+
+## Archives
+
+`archives` in a target file lists the RPMs to publish, one tar archive each:
+
+```yaml
+archives:
+  fedora44-x86_64-zfs-userspace-packages:     # output file name base, and the name `pack` takes
+    - "{{ target_id }}/zfs/zfs-{{ zfs.version }}-{{ zfs.release }}.fc{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-core-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "boot/zefosa-boot-{{ boot_packages.tools.version }}-{{ boot_packages.tools.release }}.noarch.rpm"
+```
+
+```
+uv run zefosator pack targets/fedora-44-x86_64.yaml                # every archive
+uv run zefosator pack targets/fedora-44-x86_64.yaml fedora44-x86_64-zfs-kernel-packages
+```
+
+- Paths are relative to `output/` and are Jinja2 templates rendered with the resolved plan: every
+  field `zefosator plan` prints (`target_id`, `kernel_version`, `zefosa_release`, `uname_r`, `dist`,
+  `arch`, `os_major`, `zfs.version`, `zfs.release`, `boot.shim_release`, …), plus `boot_packages`:
+  the pins of `boot/boot.yaml` (`zfsbootmenu`, `refind`, `ca`, `tools`, each with `version` and
+  `release`). `zefosator plan` shows the rendered file lists.
+- `pack` writes `output/<target-id>/archives/<name>.tar` and `<name>.sha256` (`sha256sum -c`
+  format). Files are stored side by side without directories, owned by root with mode 0644, so
+  the same files always give the same archive.
+- Every file must be listed, with a matching checksum, in the `manifest.json` of the build that
+  produced it; otherwise `pack` names each offending file and writes nothing. A failed or
+  interrupted run never leaves a `.sha256` that does not describe its tar.
 
 ## Release scheme
 

@@ -5,7 +5,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from zefosator import boottest, keys, podman, signing, verify
+from zefosator import boottest, keys, pack, podman, signing, verify
 from zefosator.config import Plan, load_boot_config, load_plan, project_root
 from zefosator.errors import ConfigError, ZefosatorError
 from zefosator.worker.boot import BootJob
@@ -16,6 +16,7 @@ TARGET_COMMANDS = (
     ("verify", "install output/<target-id>/ in a clean vendor container and check it"),
     ("build-boot", "build shim (and on Fedora the common boot packages) into output/"),
     ("boottest", "boot the built packages through the Secure Boot chain in QEMU"),
+    ("pack", "pack built RPMs into the tar + sha256 archives listed under archives:"),
 )
 
 
@@ -35,6 +36,10 @@ def _parser() -> argparse.ArgumentParser:
         )
         if name in {"build", "build-boot"}:
             _signing_arguments(command, unsigned=name == "build")
+        if name == "pack":
+            command.add_argument(
+                "names", nargs="*", metavar="ARCHIVE", help="archives to pack (default: all)"
+            )
         if name in {"build-boot", "boottest"}:
             command.add_argument("--ca-cert", type=Path, help="zefosa CA certificate (PEM or DER)")
     key_parser = commands.add_parser("keys", help="create the Secure Boot CA or a signing leaf")
@@ -123,26 +128,32 @@ def _keys(args: argparse.Namespace) -> None:
     print(f"SHA-256 fingerprint (DER): {pair.sha256}")
 
 
+def _target_command(plan: Plan, args: argparse.Namespace) -> None:
+    if args.command == "plan":
+        print(plan.model_dump_json(indent=2))
+    elif args.command == "build":
+        _build(plan, args)
+    elif args.command == "build-boot":
+        _build_boot(plan, args)
+    elif args.command == "boottest":
+        if args.ca_cert is None:
+            msg = "--ca-cert is required: boottest enrolls the CA as a MOK key"
+            raise ConfigError(msg)
+        boottest.boottest(plan, project_root(args.target), args.ca_cert.resolve())
+    elif args.command == "verify":
+        verify.verify(plan, project_root(args.target))
+    elif args.command == "pack":
+        for archive in pack.pack(plan, project_root(args.target), args.names):
+            print(f"{archive.tar} ({archive.size} bytes) sha256 {archive.sha256}")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         if args.command == "keys":
             _keys(args)
-            return 0
-        plan = load_plan(args.target, buildid=args.buildid)
-        if args.command == "plan":
-            print(plan.model_dump_json(indent=2))
-        elif args.command == "build":
-            _build(plan, args)
-        elif args.command == "build-boot":
-            _build_boot(plan, args)
-        elif args.command == "boottest":
-            if args.ca_cert is None:
-                msg = "--ca-cert is required: boottest enrolls the CA as a MOK key"
-                raise ConfigError(msg)
-            boottest.boottest(plan, project_root(args.target), args.ca_cert.resolve())
-        elif args.command == "verify":
-            verify.verify(plan, project_root(args.target))
+        else:
+            _target_command(load_plan(args.target, buildid=args.buildid), args)
     except ZefosatorError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

@@ -2,7 +2,7 @@
 
 import re
 from collections.abc import Mapping
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Annotated, Literal
 
 import yaml
@@ -18,6 +18,7 @@ ROLES: tuple[Role, ...] = ("core", "modules", "devel")
 DEFAULT_ZFS_REPO = "https://github.com/openzfs/zfs.git"
 BUILDID_RE = re.compile(r"^[a-z][a-z0-9]*$")
 ZFS_VERSION_RE = re.compile(r"^\d+(\.\d+)*$")
+ARCHIVE_NAME_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
 def _scalar_to_str(value: object) -> object:
@@ -79,6 +80,20 @@ class TargetFile(_Model):
     buildid: str | None = None
     zfs: ZfsConfig
     boot: TargetBoot | None = None
+    # archive name -> Jinja2 templates of paths under output/, rendered with the resolved plan
+    archives: dict[str, tuple[str, ...]] = {}
+
+    @field_validator("archives")
+    @classmethod
+    def _archive_names(cls, value: dict[str, tuple[str, ...]]) -> dict[str, tuple[str, ...]]:
+        for name, files in value.items():
+            if not ARCHIVE_NAME_RE.match(name):
+                msg = f"archive name {name!r} may only contain letters, digits, '.', '_' and '-'"
+                raise ValueError(msg)
+            if not files:
+                msg = f"archive {name!r} lists no files"
+                raise ValueError(msg)
+        return value
 
 
 class ImageConfig(_Model):
@@ -152,6 +167,11 @@ class BootPlan(_Model):
         return f"{self.shim_release}.zefosa"
 
 
+class ArchivePlan(_Model):
+    name: str
+    files: tuple[str, ...]  # relative to output/
+
+
 class SigningInfo(_Model):
     """Public facts about the signing certificate; the key itself never enters the plan."""
 
@@ -179,6 +199,7 @@ class Plan(_Model):
     packages: tuple[ResolvedPackage, ...]
     signing: SigningInfo | None = None
     boot: BootPlan | None = None
+    archives: tuple[ArchivePlan, ...] = ()
 
     def role(self, role: Role) -> ResolvedPackage:
         return next(p for p in self.packages if p.role == role)
@@ -252,7 +273,10 @@ def _parse_os_version(os_version: str, source: str) -> tuple[int, int]:
 
 def _load_target(path: Path) -> TargetFile:
     raw = _load_yaml(path)
-    rendered = {k: _render_strings(v, raw, f"{path}: {k}") for k, v in raw.items()}
+    # archives are rendered later, with the resolved plan
+    rendered = {
+        k: v if k == "archives" else _render_strings(v, raw, f"{path}: {k}") for k, v in raw.items()
+    }
     try:
         return TargetFile.model_validate(rendered)
     except ValidationError as exc:
@@ -364,7 +388,7 @@ def load_plan(target_path: Path, *, buildid: str | None = None) -> Plan:
         )
 
     boot = _boot_plan(target, settings, variables, (target_path, vendor_path))
-    return Plan(
+    plan = Plan(
         target_id=str(variables["target_id"]),
         vendor=target.vendor,
         os_version=target.os_version,
@@ -384,6 +408,55 @@ def load_plan(target_path: Path, *, buildid: str | None = None) -> Plan:
         packages=tuple(packages),
         boot=boot,
     )
+    if not target.archives:
+        return plan
+    return plan.model_copy(update={"archives": _archive_plans(target, plan, root, target_path)})
+
+
+def _boot_package_versions(root: Path) -> dict[str, object]:
+    """boot/boot.yaml pins, plus the rEFInd version from its upstream RPM file name."""
+    config = load_boot_config(root)
+    pins = config.model_dump(mode="json")
+    # <name>-<version>-<release>.<arch>.rpm
+    pins["refind"]["version"] = config.refind.url.rsplit("/", 1)[-1].rsplit("-", 2)[1]
+    return pins
+
+
+def _archive_plans(
+    target: TargetFile, plan: Plan, root: Path, target_path: Path
+) -> tuple[ArchivePlan, ...]:
+    variables: dict[str, object] = plan.model_dump(mode="json")
+    if (root / "boot" / "boot.yaml").is_file():
+        variables["boot_packages"] = _boot_package_versions(root)
+    return tuple(
+        ArchivePlan(name=name, files=_archive_files(name, files, variables, target_path))
+        for name, files in target.archives.items()
+    )
+
+
+def _archive_files(
+    name: str, templates: tuple[str, ...], variables: Mapping[str, object], source: Path
+) -> tuple[str, ...]:
+    seen: dict[str, str] = {}
+    for index, template in enumerate(templates):
+        where = f"{source}: archives.{name}[{index}]"
+        path = render(template, variables, where=where)
+        pure = PurePosixPath(path)
+        problem = None
+        if pure.is_absolute():
+            problem = "must be relative to output/"
+        elif ".." in pure.parts:
+            problem = "must not contain '..'"
+        elif path.endswith("/") or not pure.name:
+            problem = "must name a file"
+        elif pure.name in seen.values():
+            first = next(p for p, n in seen.items() if n == pure.name)
+            problem = f"has the same file name as {first!r}; archives are flat"
+        if problem is not None:
+            msg = f"{where}: {path!r} {problem}"
+            raise ConfigError(msg)
+        seen[str(pure)] = pure.name
+    return tuple(seen)
 
 
 _COMMIT_RE = r"^[0-9a-f]{40}$"

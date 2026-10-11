@@ -225,3 +225,93 @@ def test_unknown_vendor_rejected(tmp_path: Path) -> None:
 def test_plan_round_trips_through_json() -> None:
     plan = real_plan("almalinux-9-x86_64")
     assert Plan.model_validate_json(plan.model_dump_json()) == plan
+
+
+def archive_root(tmp_path: Path, archives: str, *, boot_yaml: bool = False) -> Path:
+    target = make_root(
+        tmp_path, target=MINI_TARGET.format(os_version="9.8", arch="x86_64") + archives
+    )
+    if boot_yaml:
+        (tmp_path / "boot").mkdir()
+        (tmp_path / "boot" / "boot.yaml").write_text((ROOT / "boot" / "boot.yaml").read_text())
+    return target
+
+
+def test_archive_paths_are_rendered_from_the_plan(tmp_path: Path) -> None:
+    target = archive_root(
+        tmp_path,
+        """\
+archives:
+  almalinux9-x86_64-zfs-userspace-packages:
+    - "{{ target_id }}/zfs/zfs-{{ zfs.version }}-{{ zfs.release }}.el{{ os_major }}.{{ arch }}.rpm"
+    - "{{ target_id }}/kernel/kernel-{{ kernel_version }}-{{ zefosa_release }}.{{ arch }}.rpm"
+    - "{{ target_id }}/zfs/kmod-zfs-devel-{{ uname_r }}-{{ zfs.version }}-0.el9.x86_64.rpm"
+    - "{{ target_id }}/boot/shim-x64-{{ dist }}.rpm"
+""",
+    )
+    plan = load_plan(target)
+    assert [(a.name, a.files) for a in plan.archives] == [
+        (
+            "almalinux9-x86_64-zfs-userspace-packages",
+            (
+                "mini-9.8-x86_64/zfs/zfs-2.3.9-0.el9.x86_64.rpm",
+                "mini-9.8-x86_64/kernel/kernel-5.14.0-687.52.1.zefosa.el9_8.x86_64.rpm",
+                "mini-9.8-x86_64/zfs/kmod-zfs-devel-5.14.0-687.52.1.el9_8.x86_64-2.3.9-0.el9.x86_64.rpm",
+                "mini-9.8-x86_64/boot/shim-x64-el9_8.rpm",
+            ),
+        )
+    ]
+
+
+def test_target_without_archives_has_none(tmp_path: Path) -> None:
+    assert load_plan(make_root(tmp_path)).archives == ()
+
+
+def test_archive_paths_can_name_the_common_boot_packages(tmp_path: Path) -> None:
+    def nvr(pin: str) -> str:
+        return f"{{{{ boot_packages.{pin}.version }}}}-{{{{ boot_packages.{pin}.release }}}}"
+
+    target = archive_root(
+        tmp_path,
+        f"""\
+archives:
+  boot:
+    - "boot/zefosa-zfsbootmenu-{nvr("zfsbootmenu")}.x86_64.rpm"
+    - "boot/zefosa-refind-{nvr("refind")}.x86_64.rpm"
+    - "boot/zefosa-secureboot-ca-{nvr("ca")}.noarch.rpm"
+    - "boot/zefosa-boot-{nvr("tools")}.noarch.rpm"
+""",
+        boot_yaml=True,
+    )
+    (archive,) = load_plan(target).archives
+    assert archive.files == (
+        "boot/zefosa-zfsbootmenu-3.1.0-1.x86_64.rpm",
+        "boot/zefosa-refind-0.14.2-1.x86_64.rpm",
+        "boot/zefosa-secureboot-ca-1-1.noarch.rpm",
+        "boot/zefosa-boot-1.0-1.noarch.rpm",
+    )
+
+
+@pytest.mark.parametrize(
+    ("archives", "message"),
+    [
+        ('archives:\n  "bad name!": ["a.rpm"]\n', r"archives: archive name 'bad name!'"),
+        ("archives:\n  empty: []\n", r"archives: archive 'empty' lists no files"),
+        ('archives:\n  a: ["/abs/x.rpm"]\n', r"archives\.a\[0\]: '/abs/x\.rpm' must be relative"),
+        (
+            'archives:\n  a: ["{{ target_id }}/../x.rpm"]\n',
+            r"archives\.a\[0\]: .* must not contain '\.\.'",
+        ),
+        ('archives:\n  a: ["{{ target_id }}/"]\n', r"archives\.a\[0\]: .* must name a file"),
+        (
+            'archives:\n  a: ["x/z.rpm", "y/z.rpm"]\n',
+            r"archives\.a\[1\]: 'y/z\.rpm' has the same file name as 'x/z\.rpm'",
+        ),
+        ('archives:\n  a: ["{{ nope }}.rpm"]\n', r"archives\.a\[0\]: 'nope' is undefined"),
+    ],
+)
+def test_invalid_archive_definitions_are_rejected(
+    tmp_path: Path, archives: str, message: str
+) -> None:
+    with pytest.raises(ConfigError, match=message):
+        load_plan(archive_root(tmp_path, archives))
